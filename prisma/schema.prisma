@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  Admin
+  Manager
+  Staff
+}
+
+model User {
+  id            String    @id @default(cuid())
+  firstName     String?   
+  surname       String?   
+  name          String    
+  email         String    @unique 
+  emailVerified Boolean
+  image         String?
+  phoneNumber   String?   
+  role          Role      @default(Staff) 
+  isActive      Boolean   @default(true)    
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  banned        Boolean?  
+  banReason     String?   
+  banExpires    DateTime? 
+
+  sessions Session[]
+  accounts Account[]
+
+  // Custom relations for Laundry Management System
+  defaultBranchId String?   
+  defaultBranch   Branch?   @relation("DefaultBranchForUsers", fields: [defaultBranchId], references: [id])
+  assignedBranches Branch[] @relation("AssignedUsersToBranches") 
+
+  @@map("user") 
+}
+
+model Session {
+  id             String   @id @default(cuid())
+  expiresAt      DateTime
+  token          String   @unique 
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?  
+
+  @@map("session") 
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   
+  refreshToken          String?   
+  idToken               String?   
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?   
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId]) 
+  @@map("account") 
+}
+
+model Verification {
+  id         String    @id @default(cuid())
+  identifier String    
+  value      String    @unique 
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("verification") 
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation for users who have this branch as default
+  defaultBranchForUsers User[] @relation("DefaultBranchForUsers")
+
+  // Relation for users assigned to this branch (many-to-many)
+  assignedUsers User[] @relation("AssignedUsersToBranches")
+
+  @@map("branch")
+}

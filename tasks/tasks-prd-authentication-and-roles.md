@@ -27,17 +27,17 @@
 
 ## Tasks
 
-- [ ] 1.0 Setup Core Authentication Infrastructure
-  - [ ] 1.1 Integrate Better Auth library with Prisma Adapter for PostgreSQL.
-  - [ ] 1.2 Update Prisma schema (`schema.prisma`):
-    - [ ] 1.2.1 Add `Role` enum (STAFF, MANAGER, ADMIN).
-    - [ ] 1.2.2 Add `role` field to User model (default: STAFF).
-    - [ ] 1.2.3 Add `isActive` boolean field to User model (for soft deletes, default: true).
-    - [ ] 1.2.4 Add `defaultBranchId` to User model (linking to a Branch model - assuming Branch model exists or will be created).
-    - [ ] 1.2.5 Define relation for User to multiple `Branch` entities (for secondary branch assignments).
-  - [ ] 1.3 Generate Prisma client after schema changes (`npx prisma generate`).
-  - [ ] 1.4 Create initial database migration for User model changes (`npx prisma migrate dev --name auth_user_updates`).
-  - [ ] 1.5 Configure basic password strength rules using Better Auth defaults.
+- [x] 1.0 Setup Core Authentication Infrastructure
+  - [x] 1.1 Integrate Better Auth library with Prisma Adapter for PostgreSQL.
+  - [x] 1.2 Update Prisma schema (`schema.prisma`):
+    - [x] 1.2.1 Add `Role` enum (STAFF, MANAGER, ADMIN).
+    - [x] 1.2.2 Add `role` field to User model (default: STAFF).
+    - [x] 1.2.3 Add `isActive` boolean field to User model (for soft deletes, default: true).
+    - [x] 1.2.4 Add `defaultBranchId` to User model (linking to a Branch model - assuming Branch model exists or will be created).
+    - [x] 1.2.5 Define relation for User to multiple `Branch` entities (for secondary branch assignments).
+  - [x] 1.3 Generate Prisma client after schema changes (`npx prisma generate`).
+  - [x] 1.4 Create initial database migration for User model changes (`npx prisma migrate dev --name auth_user_updates`).
+  - [x] 1.5 Configure basic password strength rules using Better Auth defaults.
 - [ ] 2.0 Implement User Login and Session Management
   - [ ] 2.1 Develop the Login Page UI (`app/auth/login/page.tsx`) based on the provided screenshot and code snippet.
     - [ ] 2.1.1 Implement email and password input fields.
