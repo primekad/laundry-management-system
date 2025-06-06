@@ -1,0 +1,9 @@
+Q: What type of app would you call this?
+A: This is best classified as a Laundry Management System.
+
+Q: Suggest fields/details for the order
+A: [Included fields like item_type, service_type, color, label, etc.]
+
+...
+
+[Conversation continues with detailed Q&A across all app features]

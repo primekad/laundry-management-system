@@ -1,0 +1,202 @@
+# Laundry Management System - Product Requirements Document (PRD)
+
+## Overview
+
+A multi-branch laundry management system to streamline order intake, customer records, item tracking, payment, expenses, and business analytics. Built with Next.js, using Better Auth (email/password ) and PostgreSQL with Prisma.
+
+---
+
+## 1. Core Modules
+
+### 1.1 Order Intake
+
+* Create new orders by entering:
+
+  * Customer Info: name, phone number (required), email, address (optional)
+  * Laundry Items: item type, service type(s), quantity, label (optional)
+* Service types default across items but are overrideable per item via multiselect.
+* Prices fetched from static itemType + serviceType mapping or dynamic rules (see Pricing Management).
+* Orders added to a service queue with status: `Pending`, `Washing`, `Ironing`, `Ready`, `Delivered`, `Cancelled`
+* Status updates are **manual** and can skip steps.
+* Orders can be **reopened** after delivery or cancellation.
+* Orders can be **updated**, including editing item details and status.
+
+### 1.2 Customer Management
+
+* Customer is matched by phone or email.
+* Autofill from previous data if available.
+* Every order is tracked individually even for repeat customers.
+* Customers can be added or edited via dedicated functionality.
+
+### 1.3 Invoice Management
+
+* Manual invoice number entry (default)
+* Optional auto-generation:
+
+  * Format: `PREFIX-YEAR-SEQ` (e.g., `LND-2025-00123`)
+  * Configurable prefix and sequence
+* Invoice number must be unique (validated in DB)
+
+### 1.4 Payment Tracking
+
+* Multiple partial payments allowed per order
+* Tracked fields:
+
+  * Amount
+  * Mode (cash, mobile money, card, bank)
+  * Date/time
+  * User who received
+* Orders can be: `Unpaid`, `Partially Paid`, or `Fully Paid`
+* Payments can be updated
+
+### 1.5 Expense Tracking
+
+* Daily expense logging
+
+  * Fields: Amount, Reason, Linked Order (optional), Date/time, User
+* Expenses can be added or edited
+
+### 1.6 Receipts & Invoicing
+
+* Downloadable or printable invoice
+* Shows customer info, items, quantities, prices, total, amount paid, balance
+
+### 1.7 Reporting & Dashboard
+
+* Summary dashboard:
+
+  * Total Revenue
+  * Orders This Month
+  * Outstanding Payments
+  * Total Expenses
+* Exportable Reports (CSV):
+
+  * Revenue
+  * Orders
+  * Expenses
+  * Outstanding Payments
+  * Date Range Filter (today, this week, custom, etc.)
+
+### 1.8 Notifications
+
+* Manual SMS trigger to notify:
+
+  * Items ready
+  * Items delivered with pending payment
+
+### 1.9 Audit Logging
+
+* All key actions tracked:
+
+  * Order creation, updates, status changes
+  * Payments
+  * Expenses
+  * Price edits
+  * Invoice edits
+  * SMS sent
+* Data recorded:
+
+  * User ID & name
+  * Action type & description
+  * Timestamp
+
+---
+
+## 2. Authentication & Roles
+
+### 2.1 Login
+
+* Email/password login using Better Auth
+* Prisma adapter with PostgreSQL
+* No phone, GitHub, or Twitter logins
+
+### 2.2 User Fields
+
+* First Name (required)
+* Surname (required)
+* Role (default: PublicUser)
+* Phone Number (optional)
+* Branch assignment (default branch)
+
+### 2.3 Roles & Permissions
+
+* `PublicUser` – Limited access
+* `Staff` – Can create/edit orders, receive payments, update statuses
+* `Manager` – Full access to reports and expenses
+* `Admin`/`SystemAdmin` – Full system access, config settings
+* Users can be added/edited/removed
+
+---
+
+## 3. Pricing Management
+
+* Static price table stored in DB
+* Admin-accessible via `/settings/pricing`
+* Price setup types:
+
+  * **Flat rate** per service-type
+  * **Variable pricing** based on:
+
+    * Size (yards/metres/etc.)
+    * Material
+  * **Custom entry range category**: manually enter amount during order
+* Price = itemType + serviceType combo
+* Categories and pricing are configurable
+* Price management includes adding/editing/removing categories and rates
+
+---
+
+## 4. Multi-Branch Support
+
+* Users have a default branch
+* Branch switching allowed if user has access rights
+* All data views filterable by branch
+* Audit logs, orders, payments, and expenses tied to branch
+
+---
+
+## 5. UI Features
+
+* Dashboard with filters (day/week/month/year)
+* Orders queue view by status
+* Manual entry forms for all workflows
+* Modals or tabs for order/payment detail
+* Audit logs view in order history
+* Expense & payment tables with inline actions
+* Minimalistic design with no yellow theme
+* Simple table editor for pricing
+
+---
+
+## 6. Tech Stack
+
+* **Frontend:** Next.js (App Router), TailwindCSS
+* **Backend:** Next.js API routes or server actions (TBD)
+* **Auth:** Better Auth with Prisma Adapter
+* **DB:** PostgreSQL
+* **ORM:** Prisma
+* **Messaging:** Manual SMS integration (future automation possible)
+
+---
+
+## 7. Out of Scope (for now)
+
+* Automated SMS
+* Mobile App
+* Delivery tracking
+* Loyalty program
+
+---
+
+## 8. Next Steps
+
+1. Design updated data model schema with multi-branch support
+2. Draft UI wireframes for multi-branch-aware admin dashboard
+3. Scaffold Next.js project structure
+4. Implement updated auth & role features
+5. Build order intake & management flow
+
+---
+
+> PRD Prepared for: Laundry Management App — by Kwasi Agyenkwa Danso
+> Last Updated: 2025-06-04

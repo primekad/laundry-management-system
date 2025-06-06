@@ -1,0 +1,90 @@
+## Relevant Files
+
+- `app/auth/login/page.tsx` - Contains the Login Page UI component based on the provided screenshot and code.
+- `app/auth/login/page.test.tsx` - Unit tests for the Login Page component.
+- `app/auth/forgot-password/page.tsx` - Page for initiating password reset.
+- `app/auth/reset-password/page.tsx` - Page for users to set a new password after clicking the reset link.
+- `app/dashboard/admin/users/page.tsx` - UI for Admins to manage users (list, add, edit).
+- `app/dashboard/admin/users/page.test.tsx` - Unit tests for the Admin User Management page.
+- `app/dashboard/admin/users/components/UserForm.tsx` - Component for the add/edit user form.
+- `app/dashboard/admin/users/components/UserForm.test.tsx` - Unit tests for `UserForm.tsx`.
+- `app/components/ui/AccessDeniedPage.tsx` - Component for the "Access Denied" page.
+- `lib/auth/betterAuth.ts` - Configuration and adapter setup for Better Auth library.
+- `lib/auth/session.ts` - Functions for managing user sessions (e.g., getting current user, checking auth status).
+- `lib/auth/roles.ts` - Definitions and logic for role-based access control.
+- `lib/prisma/schema.prisma` - Prisma schema definition, will need updates for User model (roles, branches, isActive flag).
+- `lib/actions/auth.ts` - Server actions for handling login, logout, password reset requests.
+- `lib/actions/users.ts` - Server actions for admin user management (CRUD operations).
+- `middleware.ts` - Next.js middleware for protecting routes based on authentication status and roles.
+- `tests/e2e/auth.spec.ts` - E2E tests for authentication flows (login, logout, role access).
+- `tests/e2e/admin/user-management.spec.ts` - E2E tests for admin user management features.
+
+### Notes
+
+- Unit tests should typically be placed alongside the code files they are testing (e.g., `MyComponent.tsx` and `MyComponent.test.tsx` in the same directory) or in a `__tests__` subdirectory.
+- E2E tests will be written using a BDD-style approach.
+- Use `npm test` or `yarn test` (or `npx jest [optional/path/to/test/file]`) to run tests, assuming Jest is configured.
+
+## Tasks
+
+- [ ] 1.0 Setup Core Authentication Infrastructure
+  - [ ] 1.1 Integrate Better Auth library with Prisma Adapter for PostgreSQL.
+  - [ ] 1.2 Update Prisma schema (`schema.prisma`):
+    - [ ] 1.2.1 Add `Role` enum (STAFF, MANAGER, ADMIN).
+    - [ ] 1.2.2 Add `role` field to User model (default: STAFF).
+    - [ ] 1.2.3 Add `isActive` boolean field to User model (for soft deletes, default: true).
+    - [ ] 1.2.4 Add `defaultBranchId` to User model (linking to a Branch model - assuming Branch model exists or will be created).
+    - [ ] 1.2.5 Define relation for User to multiple `Branch` entities (for secondary branch assignments).
+  - [ ] 1.3 Generate Prisma client after schema changes (`npx prisma generate`).
+  - [ ] 1.4 Create initial database migration for User model changes (`npx prisma migrate dev --name auth_user_updates`).
+  - [ ] 1.5 Configure basic password strength rules using Better Auth defaults.
+- [ ] 2.0 Implement User Login and Session Management
+  - [ ] 2.1 Develop the Login Page UI (`app/auth/login/page.tsx`) based on the provided screenshot and code snippet.
+    - [ ] 2.1.1 Implement email and password input fields.
+    - [ ] 2.1.2 Implement "Remember me" checkbox functionality.
+    - [ ] 2.1.3 Implement "Forgot password?" link.
+  - [ ] 2.2 Create server action (`lib/actions/auth.ts`) for handling login form submission.
+    - [ ] 2.2.1 Validate credentials using Better Auth.
+    - [ ] 2.2.2 Create user session upon successful login.
+    - [ ] 2.2.3 Handle login errors and display appropriate messages on the Login Page.
+  - [ ] 2.3 Implement logout functionality (e.g., a logout button in the user profile/sidebar that calls a server action).
+  - [ ] 2.4 Implement password reset flow:
+    - [ ] 2.4.1 Create "Forgot Password" page (`app/auth/forgot-password/page.tsx`) to input email.
+    - [ ] 2.4.2 Server action to generate a secure, time-limited reset token and send a user-friendly email (content to be defined).
+    - [ ] 2.4.3 Create "Reset Password" page (`app/auth/reset-password/page.tsx`) for user to enter new password using token from email.
+    - [ ] 2.4.4 Server action to validate token and update user's password.
+  - [ ] 2.5 Write unit tests for Login Page component and auth server actions.
+- [ ] 3.0 Develop Role-Based Access Control (RBAC) and Branch Management
+  - [ ] 3.1 Implement Next.js middleware (`middleware.ts`) to protect routes based on authentication status and user roles.
+    - [ ] 3.1.1 Redirect unauthenticated users to the login page.
+    - [ ] 3.1.2 Prevent access to role-specific routes if user does not have the required role.
+  - [ ] 3.2 Create utility functions (`lib/auth/roles.ts` or in session management) to check user permissions based on their role.
+  - [ ] 3.3 Dynamically render UI elements (e.g., navigation links, buttons) based on user's role and permissions.
+  - [ ] 3.4 Implement branch switching functionality for Staff, Manager, and Admin users (e.g., dropdown in sidebar as per screenshot).
+    - [ ] 3.4.1 Store current active branch in user session or client-side state.
+    - [ ] 3.4.2 Ensure data displays (dashboards, reports, lists) and data entry are filtered/scoped to the active branch for Staff/Managers.
+  - [ ] 3.5 Implement "All Branches" view for Admins:
+    - [ ] 3.5.1 Allow Admins to select an "All Branches" context.
+    - [ ] 3.5.2 When "All Branches" is active, data entry forms must include a branch selector.
+    - [ ] 3.5.3 When "All Branches" is active, grids/reports should display branch information for each record.
+  - [ ] 3.6 Implement the "Access Denied" page (`app/components/ui/AccessDeniedPage.tsx`) with generic message, link to dashboard, and admin contact info.
+- [ ] 4.0 Build Admin User Management Interface
+  - [ ] 4.1 Create Admin User Management page (`app/dashboard/admin/users/page.tsx`).
+    - [ ] 4.1.1 Display a list/table of all users with key information (Name, Email, Role, Default Branch, Status (Active/Inactive)).
+    - [ ] 4.1.2 Provide options to add new user, edit existing user, soft delete/reactivate user, and trigger password reset.
+  - [ ] 4.2 Develop User Form component (`app/dashboard/admin/users/components/UserForm.tsx`) for adding and editing users.
+    - [ ] 4.2.1 Include fields: First Name, Surname, Email (read-only when editing), Role (dropdown, default Staff), Phone Number, Default Branch (dropdown), Secondary Branches (multi-select or similar).
+    - [ ] 4.2.2 Implement form validation (e.g., required fields, valid email format, valid phone number format - default to Ghana).
+  - [ ] 4.3 Create server actions (`lib/actions/users.ts`) for user CRUD operations:
+    - [ ] 4.3.1 Create user (hash password using Better Auth).
+    - [ ] 4.3.2 Read/list users (with pagination if necessary).
+    - [ ] 4.3.3 Update user details (ensure email is not directly updatable).
+    - [ ] 4.3.4 Soft delete user (set `isActive` to false).
+    - [ ] 4.3.5 Reactivate user (set `isActive` to true).
+  - [ ] 4.4 Write unit tests for User Management page and UserForm component.
+- [ ] 5.0 Implement Supporting UI Elements and Testing Framework
+  - [ ] 5.1 Ensure phone number validation defaults to Ghanaian format but supports international numbers.
+  - [ ] 5.2 Set up Jest (or chosen testing framework) for unit testing.
+  - [ ] 5.3 Set up Playwright (or chosen E2E framework) for BDD-style E2E testing.
+  - [ ] 5.4 Write E2E tests for core authentication flows (login, logout, access restriction based on role).
+  - [ ] 5.5 Write E2E tests for admin user management (add user, edit user, delete user, password reset trigger).
