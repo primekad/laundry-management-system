@@ -11,7 +11,7 @@
 - `app/components/ui/AccessDeniedPage.tsx` - Component for the "Access Denied" page.
 - `lib/auth/betterAuth.ts` - Configuration and adapter setup for Better Auth library.
 - `lib/auth/session.ts` - Functions for managing user sessions (e.g., getting current user, checking auth status).
-- `lib/auth/roles.ts` - Definitions and logic for role-based access control.
+- `lib/auth/roles.ts` - LoginDefinitions and logic for role-based access control.
 - `lib/prisma/schema.prisma` - Prisma schema definition, will need updates for User model (roles, branches, isActive flag).
 - `lib/actions/auth.ts` - Server actions for handling login, logout, password reset requests.
 - `lib/actions/users.ts` - Server actions for admin user management (CRUD operations).
@@ -39,15 +39,15 @@
   - [x] 1.4 Create initial database migration for User model changes (`npx prisma migrate dev --name auth_user_updates`).
   - [x] 1.5 Configure basic password strength rules using Better Auth defaults.
 - [ ] 2.0 Implement User Login and Session Management
-  - [ ] 2.1 Develop the Login Page UI (`app/auth/login/page.tsx`) based on the provided screenshot and code snippet.
-    - [ ] 2.1.1 Implement email and password input fields.
-    - [ ] 2.1.2 Implement "Remember me" checkbox functionality.
-    - [ ] 2.1.3 Implement "Forgot password?" link.
-  - [ ] 2.2 Create server action (`lib/actions/auth.ts`) for handling login form submission.
-    - [ ] 2.2.1 Validate credentials using Better Auth.
-    - [ ] 2.2.2 Create user session upon successful login.
-    - [ ] 2.2.3 Handle login errors and display appropriate messages on the Login Page.
-  - [ ] 2.3 Implement logout functionality (e.g., a logout button in the user profile/sidebar that calls a server action).
+  - [x] 2.1 Develop the Login Page UI (`app/auth/login/page.tsx`) based on the provided screenshot and code snippet.
+    - [x] 2.1.1 Implement email and password input fields.
+    - [x] 2.1.2 Implement "Remember me" checkbox functionality.
+    - [x] 2.1.3 Implement "Forgot password?" link.
+  - [x] 2.2 Create server action (`server-actions/auth.ts`) for handling login form submission.
+    - [x] 2.2.1 Validate credentials using Better Auth.
+    - [x] 2.2.2 Create user session upon successful login.
+    - [x] 2.2.3 Handle login errors and display appropriate messages on the Login Page.
+  - [x] 2.3 Implement logout functionality (e.g., a logout button in the user profile/sidebar that calls a server action).
   - [ ] 2.4 Implement password reset flow:
     - [ ] 2.4.1 Create "Forgot Password" page (`app/auth/forgot-password/page.tsx`) to input email.
     - [ ] 2.4.2 Server action to generate a secure, time-limited reset token and send a user-friendly email (content to be defined).

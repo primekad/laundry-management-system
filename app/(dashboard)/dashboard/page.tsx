@@ -9,6 +9,9 @@ import { MetricCard } from "@/components/ui/metric-card"
 import { DollarSign, ShoppingBag, Eye, Edit, Printer, ArrowUpRight, Users, Clock, Download } from "lucide-react"
 import { ResponsiveContainer, XAxis, YAxis, Tooltip, Area, AreaChart, Bar, BarChart } from "recharts"
 import Link from "next/link"
+import {authClient} from "@/lib/auth-client";
+import router from "next/router";
+import {redirect} from "next/navigation";
 
 const revenueData = [
   { day: "Mon", revenue: 1200, orders: 15 },
@@ -48,6 +51,9 @@ const getStatusBadge = (status: string) => {
 }
 
 export default function DashboardPage() {
+
+  const {data:session} = authClient.useSession();
+
   return (
     <div className="space-y-8">
       {/* Header */}

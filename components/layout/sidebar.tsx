@@ -21,6 +21,8 @@ import {
   LogOut,
   Zap,
 } from "lucide-react"
+import {authClient} from "@/lib/auth-client";
+import { useRouter } from 'next/navigation'
 
 interface NavItem {
   name: string
@@ -80,6 +82,9 @@ const settingsNavItems: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const {data:session} = authClient.useSession()
+  const router = useRouter()
+
 
   return (
     <div
@@ -231,8 +236,8 @@ export function Sidebar() {
             </Avatar>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-900 truncate">Kwasi Danso</p>
-                <p className="text-xs text-slate-500 truncate">Administrator</p>
+                <p className="text-sm font-bold text-slate-900 truncate">{session?.user?.name}</p>
+                <p className="text-xs text-slate-500 truncate">{session?.user?.role}</p>
               </div>
             )}
           </div>
@@ -241,8 +246,15 @@ export function Sidebar() {
               variant="ghost"
               size="icon"
               className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
+              onClick={ async ()=> await authClient.signOut({
+                fetchOptions: {
+                  onSuccess: () => {
+                    router.push("/login"); // redirect to login page
+                  },
+                },
+              })}
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4"  />
               <span className="sr-only">Log out</span>
             </Button>
           )}

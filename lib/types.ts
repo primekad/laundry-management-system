@@ -10,7 +10,7 @@ export interface User {
   isActive: boolean
 }
 
-export type UserRole = "Admin" | "Manager" | "Staff" | "PublicUser"
+export type UserRole = "Admin" | "Manager" | "Staff"
 
 export interface Customer {
   id: string
