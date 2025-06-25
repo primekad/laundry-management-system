@@ -1,4 +1,4 @@
-import UsersTable from '@/app/(dashboard)/admin/users/table';
+import UsersTable from '@/app/(core-app)/admin/users/table';
 import { Suspense } from 'react';
 import { UsersTableSkeleton } from '@/components/ui/skeletons';
 

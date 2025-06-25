@@ -1,4 +1,4 @@
-import { EditUserForm } from '@/app/(dashboard)/admin/users/[id]/edit-form';
+import { EditUserForm } from '@/app/(core-app)/admin/users/[id]/edit-form';
 import { fetchUserById, fetchBranches } from '@/lib/data/users';
 import {
   Breadcrumb,

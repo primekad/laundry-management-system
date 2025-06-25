@@ -1,6 +1,6 @@
 import { fetchUsers } from '@/lib/data/users';
 
-import { CreateUser } from '@/app/(dashboard)/admin/users/buttons';
+import { CreateUser } from '@/app/(core-app)/admin/users/buttons';
 import { UserDataTable } from './user-data-table';
 import { columns } from './columns';
 

@@ -1,4 +1,4 @@
-import { CreateUserForm } from '@/app/(dashboard)/admin/users/create-form';
+import { CreateUserForm } from '@/app/(core-app)/admin/users/create-form';
 import { fetchBranches } from '@/lib/data/users';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
  

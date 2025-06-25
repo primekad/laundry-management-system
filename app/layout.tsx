@@ -7,8 +7,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "LaundroTrack - Laundry Management System",
-  description: "Professional laundry management system for single-branch operations",
-    generator: 'v0.dev'
+  description: "Professional laundry management system for single-branch operations"
 }
 
 export default function RootLayout({
