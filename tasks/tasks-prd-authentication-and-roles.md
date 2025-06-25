@@ -48,20 +48,20 @@
     - [x] 2.2.2 Create user session upon successful login.
     - [x] 2.2.3 Handle login errors and display appropriate messages on the Login Page.
   - [x] 2.3 Implement logout functionality (e.g., a logout button in the user profile/sidebar that calls a server action).
-  - [ ] 2.4 Implement password reset flow:
-    - [ ] 2.4.1 Create "Forgot Password" page (`app/auth/forgot-password/page.tsx`) to input email.
-    - [ ] 2.4.2 Server action to generate a secure, time-limited reset token and send a user-friendly email (content to be defined).
-    - [ ] 2.4.3 Create "Reset Password" page (`app/auth/reset-password/page.tsx`) for user to enter new password using token from email.
-    - [ ] 2.4.4 Server action to validate token and update user's password.
-  - [ ] 2.5 Write unit tests for Login Page component and auth server actions.
-- [ ] 3.0 Develop Role-Based Access Control (RBAC) and Branch Management
-  - [ ] 3.1 Implement Next.js middleware (`middleware.ts`) to protect routes based on authentication status and user roles.
-    - [ ] 3.1.1 Redirect unauthenticated users to the login page.
-    - [ ] 3.1.2 Prevent access to role-specific routes if user does not have the required role.
-  - [ ] 3.2 Create utility functions (`lib/auth/roles.ts` or in session management) to check user permissions based on their role.
-  - [ ] 3.3 Dynamically render UI elements (e.g., navigation links, buttons) based on user's role and permissions.
-  - [ ] 3.4 Implement branch switching functionality for Staff, Manager, and Admin users (e.g., dropdown in sidebar as per screenshot).
-    - [ ] 3.4.1 Store current active branch in user session or client-side state.
+  - [x] 2.4 Implement password reset flow:
+    - [x] 2.4.1 Create "Forgot Password" page (`app/auth/forgot-password/page.tsx`) to input email.
+    - [x] 2.4.2 Server action to generate a secure, time-limited reset token and send a user-friendly email (content to be defined).
+    - [x] 2.4.3 Create "Reset Password" page (`app/auth/reset-password/page.tsx`) for user to enter new password using token from email.
+    - [x] 2.4.4 Server action to validate token and update user's password.
+  - [x] 2.5 Write unit tests for Login Page component and auth server actions.
+- [ ] 3.0 Develop Role-Based Access Control (RBAC) ~~and~~ Branch Management
+  - [x] 3.1 Implement Next.js middleware (`middleware.ts`) to protect routes based on authentication status and user roles.
+    - [x] 3.1.1 Redirect unauthenticated users to the login page.
+    - [x] 3.1.2 Prevent access to role-specific routes if user does not have the required role.
+  - [x] 3.2 Create utility functions (`lib/auth/roles.ts` or in session management) to check user permissions based on their role.
+  - [x] 3.3 Dynamically render UI elements (e.g., navigation links, buttons) based on user's role and permissions.
+  - [x] 3.4 Implement branch switching functionality for Staff, Manager, and Admin users (e.g., dropdown in sidebar as per screenshot).
+    - [x] 3.4.1 Store current active branch in user session or client-side state.
     - [ ] 3.4.2 Ensure data displays (dashboards, reports, lists) and data entry are filtered/scoped to the active branch for Staff/Managers.
   - [ ] 3.5 Implement "All Branches" view for Admins:
     - [ ] 3.5.1 Allow Admins to select an "All Branches" context.

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth'; // Your configured Better Auth instance
-// import { doesUserExist } from '@/lib/users/user-queries'; // Decided against pre-check for now
+// import { doesUserExist } from '@/lib/users/user-queries-helpers.ts'; // Decided against pre-check for now
 
 export async function POST(request: Request) {
   if (process.env.NODE_ENV !== 'development') {

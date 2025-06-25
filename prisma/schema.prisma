@@ -103,5 +103,100 @@ model Branch {
   // Relation for users assigned to this branch (many-to-many)
   assignedUsers User[] @relation("AssignedUsersToBranches")
 
+  // Relations for laundry system
+  orders   Order[]
+  expenses Expense[]
+
   @@map("branch")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  READY_FOR_PICKUP
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  invoiceNumber   String       @unique
+  branchId        String
+  branch          Branch       @relation(fields: [branchId], references: [id])
+  customerId      String
+  customer        Customer     @relation(fields: [customerId], references: [id])
+  items           OrderItem[]
+  totalAmount     Float
+  amountPaid      Float        @default(0)
+  amountDue       Float
+  status          OrderStatus  @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  payments        Payment[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+  quantity  Int
+  price     Float
+  subtotal  Float
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id])
+  amount        Float
+  paymentMethod PaymentMethod @default(CASH)
+  transactionId String?
+  status        PaymentStatus @default(PAID)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  branchId    String
+  branch      Branch   @relation(fields: [branchId], references: [id])
+  description String
+  amount      Float
+  category    String?
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Customer {
+  id       String  @id @default(cuid())
+  name     String
+  email    String   @unique
+  phone    String?
+  address  String?
+  orders   Order[]
+}
+
+model Service {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  orderItems  OrderItem[]
 }
