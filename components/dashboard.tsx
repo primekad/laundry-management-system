@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DollarSign, ShoppingBag, AlertCircle, TrendingUp, Eye, Edit, Printer } from "lucide-react"
+import { DollarSign, ShoppingBag, AlertCircle, TrendingUp, Eye, Edit, Printer, Users, Clock } from "lucide-react"
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { format } from 'date-fns';
@@ -51,8 +51,16 @@ async function fetchRecentExpenses(branchId: string) {
   return response.json();
 }
 
+async function fetchOrderStatusDistribution(branchId: string) {
+  const response = await fetch(`/api/dashboard/order-status?branchId=${branchId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch order status distribution');
+  }
+  return response.json();
+}
+
 export default function Dashboard() {
-  const { activeBranch } = useBranch();
+  const { activeBranch, allBranchesOption, isAllBranches, setActiveBranch } = useBranch();
 
   const { data: stats, isLoading: isLoadingStats, error: statsError } = useQuery({
     queryKey: ['dashboardStats', activeBranch?.id],
@@ -77,12 +85,19 @@ export default function Dashboard() {
     queryFn: () => fetchRecentExpenses(activeBranch!.id),
     enabled: !!activeBranch,
   });
+  
+  // Fetch order status distribution data
+  const { data: orderStatusData, isLoading: isLoadingOrderStatus, error: orderStatusError } = useQuery({
+    queryKey: ['orderStatusDistribution', activeBranch?.id],
+    queryFn: () => fetchOrderStatusDistribution(activeBranch!.id),
+    enabled: !!activeBranch,
+  });
 
-  if ((isLoadingStats || isLoadingChart || isLoadingOrders || isLoadingExpenses) && !stats) {
+  if ((isLoadingStats || isLoadingChart || isLoadingOrders || isLoadingExpenses || isLoadingOrderStatus) && !stats) {
     return <div>Loading dashboard...</div>;
   }
 
-  if (statsError || chartError || ordersError || expensesError) {
+  if (statsError || chartError || ordersError || expensesError || orderStatusError) {
     return <div>Error loading dashboard data.</div>;
   }
 
@@ -90,11 +105,21 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        {activeBranch && (
-          <Badge variant="outline" className="text-lg">
-            Viewing: {activeBranch.name}
-          </Badge>
-        )}
+        <div className="flex items-center gap-4">
+          {activeBranch && (
+            <Badge variant="outline" className="text-lg">
+              Viewing: {activeBranch.name}
+            </Badge>
+          )}
+          <div className="flex space-x-2">
+            <Button 
+              variant={isAllBranches ? "default" : "outline"}
+              onClick={() => setActiveBranch('all')}
+            >
+              All Branches
+            </Button>
+          </div>
+        </div>
       </div>
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -113,47 +138,67 @@ export default function Dashboard() {
         <AuthGuard permission={{ report: ['view'] }}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">Weekly Revenue</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₵{stats?.totalRevenue.toFixed(2) || '0.00'}</div>
-              <p className="text-xs text-muted-foreground">This month</p>
+              <div className="text-2xl font-bold">₵{stats?.weeklyRevenue.toFixed(2) || '0.00'}</div>
+              <div className="flex items-center gap-1">
+                <Badge variant={stats?.revenueTrend === 'up' ? 'default' : 'destructive'}>
+                  {stats?.revenueChangePercentage || 0}%
+                </Badge>
+                <p className="text-xs text-muted-foreground">vs last week</p>
+              </div>
             </CardContent>
           </Card>
         </AuthGuard>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orders This Month</CardTitle>
+            <CardTitle className="text-sm font-medium">Weekly Orders</CardTitle>
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.ordersThisMonth || 0}</div>
-            <p className="text-xs text-muted-foreground">+8 from yesterday</p>
+            <div className="text-2xl font-bold">{stats?.weeklyOrders || 0}</div>
+            <div className="flex items-center gap-1">
+              <Badge variant={stats?.ordersTrend === 'up' ? 'default' : 'destructive'}>
+                {stats?.ordersChangePercentage || 0}%
+              </Badge>
+              <p className="text-xs text-muted-foreground">vs last week</p>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Outstanding Payments</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">New Clients</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₵{stats?.outstandingPayments.toFixed(2) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">12 pending orders</p>
+            <div className="text-2xl font-bold">{stats?.newClients || 0}</div>
+            <div className="flex items-center gap-1">
+              <Badge variant={stats?.clientsTrend === 'up' ? 'default' : 'destructive'}>
+                {stats?.clientsChangePercentage || 0}%
+              </Badge>
+              <p className="text-xs text-muted-foreground">vs last week</p>
+            </div>
           </CardContent>
         </Card>
 
         <AuthGuard permission={{ expense: ['list'] }}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Expenses</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Processing Time</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₵{stats?.expensesThisMonth.toFixed(2) || '0.00'}</div>
-              <p className="text-xs text-muted-foreground">This month</p>
+              <div className="text-2xl font-bold">{stats?.avgProcessingTime || 0} hrs</div>
+              <div className="flex items-center gap-1">
+                <Badge variant={stats?.processingTimeTrend === 'up' ? 'destructive' : 'default'}>
+                  {stats?.processingTimeChangePercentage || 0}%
+                </Badge>
+                <p className="text-xs text-muted-foreground">vs last week</p>
+              </div>
             </CardContent>
           </Card>
         </AuthGuard>
@@ -165,7 +210,7 @@ export default function Dashboard() {
           <Card className="col-span-1 lg:col-span-2">
             <CardHeader>
               <CardTitle>Revenue Overview</CardTitle>
-              <CardDescription>Last 7 days</CardDescription>
+              <CardDescription>Weekly performance</CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
               {isLoadingChart ? (

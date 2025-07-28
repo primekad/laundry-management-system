@@ -3,20 +3,44 @@
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Users, Receipt, Building, Bell, Shield, CreditCard } from "lucide-react"
+import { Users, Receipt, Building, Bell, Shield, CreditCard, Zap, Settings } from "lucide-react"
 
 const settingsCategories = [
   {
     title: "User Management",
     description: "Manage system users and their permissions",
     icon: Users,
-    href: "/settings/users",
+    href: "/admin/users",
   },
   {
-    title: "Pricing Configuration",
+    title: "Branch Management",
+    description: "Manage business branches and their details",
+    icon: Building,
+    href: "/admin/branches",
+  },
+  {
+    title: "Laundry Categories",
+    description: "Manage the categories of laundry services you offer",
+    icon: Zap,
+    href: "/admin/laundry-categories",
+  },
+  {
+    title: "Service Types",
+    description: "Manage the types of services your laundry offers",
+    icon: Settings,
+    href: "/admin/service-types",
+  },
+  {
+    title: "Pricing Rules",
     description: "Set up pricing for different item types and services",
+    icon: CreditCard,
+    href: "/admin/pricing-rules",
+  },
+  {
+    title: "Expense Categories",
+    description: "Manage categories for business expenses",
     icon: Receipt,
-    href: "/settings/pricing",
+    href: "/admin/expense-categories",
   },
   {
     title: "Business Information",

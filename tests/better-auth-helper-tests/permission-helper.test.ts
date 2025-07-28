@@ -8,8 +8,8 @@ import {createTestUser, testUsers,} from '@/tests/better-auth-helper-tests/__hel
 import {checkUserPermission, userHasRole} from '@/lib/better-auth-helpers/permission-helpers';
 import {getUserByEmail} from '@/lib/better-auth-helpers/user-queries-helpers';
 
-const testDbPath = join(__dirname, './__helpers/test.db');
-const baseAuthOptions = getBetterAuthOptions(true);
+const testDbPath = join(__dirname, './__helpers/test-permissions.db');
+const baseAuthOptions = getBetterAuthOptions();
 
 const testAuth = betterAuth({
   ...baseAuthOptions,

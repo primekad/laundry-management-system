@@ -1,39 +1,51 @@
-import {beforeEach, describe, expect, it} from 'vitest';
+import {beforeEach,afterEach, describe, expect, it} from 'vitest';
 import {getBetterAuthOptions} from '@/lib/auth';
 import {getTestInstance} from '@better-auth-kit/tests';
 import {betterAuth} from 'better-auth';
 import {join} from 'path';
 import Database from 'better-sqlite3';
-import {createTestUser, testUsers,} from '@/tests/better-auth-helper-tests/__helpers/seed/seed-helper';
+import {PrismaClient} from './__helpers/prisma/client';
+import {
+  createTestUser,
+  seedBranches,
+  testUsers,
+} from '@/tests/better-auth-helper-tests/__helpers/seed/seed-helper';
 import {getUserByEmail} from '@/lib/better-auth-helpers/user-queries-helpers';
 import {
   banUser,
   createUser,
-  deleteUser,
+  deleteUser, loginUser,
   setUserRole,
   unbanUser,
 } from '@/lib/better-auth-helpers/user-commands-helpers';
+import {AppUser} from "@/lib/better-auth-helpers/types";
 
-const testDbPath = join(__dirname, './__helpers/test.db');
+
+
+const testDbPath = join(__dirname, './__helpers/test-commands.db');
 const baseAuthOptions = getBetterAuthOptions();
 
 const testAuth = betterAuth({
   ...baseAuthOptions,
     database: new Database(testDbPath),
+  plugins: [baseAuthOptions.plugins[0]]
 });
 
 describe('User Commands Helper Tests', async () => {
   const { signInWithUser, resetDatabase } = await getTestInstance(testAuth, {
     shouldRunMigrations: true,
   });
+
+
   let signedInHeaders: Headers = new Headers();
 
   beforeEach(async () => {
+
     await resetDatabase();
     await createTestUser(testAuth, testUsers.admin);
     const { headers } = await signInWithUser(
       testUsers.admin.email,
-      testUsers.admin.password
+      testUsers.admin.password,
     );
     signedInHeaders = headers;
   });
@@ -97,4 +109,16 @@ describe('User Commands Helper Tests', async () => {
     fetchedUser = await getUserByEmail(userToBan.email, signedInHeaders,testAuth);
     expect(fetchedUser?.banned).toBe(false);
   });
+
+  it("should login a user", async () => {
+    const userToLogin = testUsers.manager;
+    await createUser(userToLogin, signedInHeaders, testAuth);
+
+    let fetchedUser = await getUserByEmail(userToLogin.email, signedInHeaders, testAuth) as AppUser;
+
+    const {user} = await loginUser(userToLogin.email, userToLogin.password, false, testAuth);
+
+    expect(user?.email).toBe(userToLogin.email);
+  });
+
 });

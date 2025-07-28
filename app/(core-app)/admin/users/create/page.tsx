@@ -1,15 +1,18 @@
-import { CreateUserForm } from '@/app/(core-app)/admin/users/create-form';
-import { fetchBranches } from '@/lib/data/users';
-import Breadcrumbs from '@/components/ui/breadcrumbs';
- 
+import { fetchBranches } from '@/lib/data-services/branch-data-service';
+import { UserForm } from '@/app/(core-app)/admin/users/user-form';
+import Breadcrumbs  from '@/components/ui/breadcrumbs';
+
 export default async function Page() {
   const branches = await fetchBranches();
- 
+
   return (
     <main>
       <Breadcrumbs
         breadcrumbs={[
-          { label: 'Users', href: '/admin/users' },
+          {
+            label: 'Users',
+            href: '/admin/users',
+          },
           {
             label: 'Create User',
             href: '/admin/users/create',
@@ -17,7 +20,7 @@ export default async function Page() {
           },
         ]}
       />
-      <CreateUserForm branches={branches} />
+      <UserForm branches={branches} intent="create" />
     </main>
   );
 }

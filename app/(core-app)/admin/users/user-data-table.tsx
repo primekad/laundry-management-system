@@ -11,6 +11,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  RowData,
 } from '@tanstack/react-table';
 
 import {
@@ -23,13 +24,21 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { UserDetailsModal } from './user-details-modal';
+import { User } from '@/lib/definitions';
 
-interface UserDataTableProps<TData, TValue> {
+declare module '@tanstack/react-table' {
+  interface TableMeta<TData extends RowData> {
+    viewUser?: (user: TData) => void;
+  }
+}
+
+interface UserDataTableProps<TData extends User, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
 
-export function UserDataTable<TData, TValue>({
+export function UserDataTable<TData extends User, TValue>({
   columns,
   data,
 }: UserDataTableProps<TData, TValue>) {
@@ -37,6 +46,7 @@ export function UserDataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+  const [viewingUser, setViewingUser] = React.useState<TData | null>(null);
 
   const table = useReactTable({
     data,
@@ -51,28 +61,22 @@ export function UserDataTable<TData, TValue>({
       sorting,
       columnFilters,
     },
+    meta: {
+      viewUser: (user: TData) => setViewingUser(user),
+    },
   });
 
   return (
     <div>
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter by name..."
-          value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-          onChange={(event) =>
-            table.getColumn('name')?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-      </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="bg-gray-50 hover:bg-gray-50">
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className="text-muted-foreground uppercase text-xs font-medium">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -91,6 +95,7 @@ export function UserDataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  className="hover:bg-gray-50"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -115,24 +120,10 @@ export function UserDataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
-      </div>
+
+      {viewingUser && (
+        <UserDetailsModal user={viewingUser} onClose={() => setViewingUser(null)} />
+      )}
     </div>
   );
 }

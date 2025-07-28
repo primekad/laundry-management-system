@@ -10,6 +10,7 @@ import {
 } from './auth/permissions';
 import {nextCookies} from "better-auth/next-js";
 import sendEmail from "@/lib/email-api/send-email";
+import { getEmailTemplate, getTemplateTypeFromUrl } from "@/lib/email-templates/template-utils";
 
 
 export function getBetterAuthOptions() {
@@ -21,30 +22,58 @@ export function getBetterAuthOptions() {
             additionalFields: {
                 role: {
                     type: "string",
-                    input: false,
+                    input: true,
                 },
                 assignedBranches: {
-                    type: "string",
-                    input: false,
+                    type: "string[]",
+                    input: true,
+                    required: false
                 },
-                defaultBranch: {
+                phoneNumber: {
                     type: "string",
-                    input: false,
+                    input: true,
+                    required: false
+                },
+                defaultBranchId: {
+                    type: "string",
+                    input: true,
+                    required: false
                 }
             }
         },
         emailAndPassword: {
             enabled: true,
             sendResetPassword: async ({user, url, token}: {
-                user: { email: string; [key: string]: any };
+                user: { email: string; name?: string; [key: string]: any };
                 url: string;
                 token: string
             }) => {
-                await sendEmail({
-                    to: user.email,
-                    subject: "Reset your password",
-                    html: `<p>Click the link to reset your password: ${url}</p>`,
-                });
+                try {
+                    console.log(url)
+                    // Determine template type from URL query parameters
+                    const templateType = getTemplateTypeFromUrl(url);
+                    
+                    // Get the appropriate email template
+                    const { subject, html } = getEmailTemplate(templateType, {
+                        resetUrl: url,
+                        userName: user.name || user.email.split('@')[0],
+                        userEmail: user.email
+                    });
+                    
+                    await sendEmail({
+                        to: user.email,
+                        subject,
+                        html
+                    });
+                } catch (error) {
+                    console.error('Error sending reset password email:', error);
+                    // Fallback to basic email if template fails
+                    await sendEmail({
+                        to: user.email,
+                        subject: "Reset your password",
+                        html: `<p>Click the link to reset your password: ${url}</p>`,
+                    });
+                }
             }
         },
         plugins: [

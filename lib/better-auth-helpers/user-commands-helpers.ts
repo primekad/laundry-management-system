@@ -1,9 +1,13 @@
 import { auth as defaultAuth } from '@/lib/auth';
-import type {
+import { db } from '@/lib/db';
+import {
   AppUser,
   AssignableRole,
-  CreateUserData,
+  CreateUserData, UpdateUserData,
 } from './types';
+import {getUserByEmail, getUserById} from './user-queries-helpers';
+
+import {LoginSchema} from "@/app/(auth)/auth-schemas";
 
 /**
  * Creates a new user.
@@ -14,11 +18,48 @@ export async function createUser(
   auth = defaultAuth
 ): Promise<AppUser> {
   try {
+    // Create user with better-auth API (without branch relationships)
     const result = await auth.api.createUser({ body: userData, headers });
     return result.user as AppUser;
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('Error creating user with better-auth:', error);
     throw new Error('Failed to create user.');
+  }
+}
+
+
+/**
+ * Updates an existing user.
+ */
+export async function updateUser(
+  userId: string,
+  userData: UpdateUserData,
+  headers?: HeadersInit,
+  auth = defaultAuth
+): Promise<AppUser> {
+  try {
+    console.log('Updating user with better-auth:', { userId, userData });
+    
+    // Extract branch data before updating user (better-auth doesn't handle relationships)
+    const { assignedBranches, defaultBranchId, ...userDataWithoutBranches } = userData.data || {};
+    const cleanUserData = {
+      name: userData.name,
+      email: userData.email,
+      role: Array.isArray(userData.role) ? userData.role[0] : userData.role, // Ensure single role
+      data: userDataWithoutBranches
+    };
+    
+    // Update user with better-auth API (without branch relationships)
+    const result = await auth.api.updateUser(
+        {body: cleanUserData, headers }
+    );
+    
+    // Get the updated user since the API response structure varies
+    return await getUserById(userId, headers, auth) as AppUser;
+
+  } catch (error) {
+    console.error(`Error updating user with better-auth (${userId}):`, error);
+    throw new Error('Failed to update user.');
   }
 }
 
@@ -155,5 +196,72 @@ export async function stopImpersonating(
   } catch (error) {
     console.error('Error stopping impersonation:', error);
     throw new Error('Failed to stop impersonation.');
+  }
+}
+
+type signInUserResponse = ReturnType<typeof defaultAuth.api.signInEmail>;
+
+export async function loginUser(
+  email: string,
+  password: string,
+  rememberMe?: boolean,
+  auth = defaultAuth
+): Promise<signInUserResponse> {
+  try {
+    return await auth.api.signInEmail({ body: { email, password, rememberMe } });
+  } catch (error) {
+    console.error(`Error logging in user (${email}):`, error);
+    throw error;
+  }
+}
+
+/**
+ * Requests a password reset for a user.
+ * @param email - User's email address
+ * @param resetType - Type of reset: 'fgp' (forgot password), 'newusr' (new user), 'admreq' (admin request)
+ * @param auth - Auth instance
+ * TODO: Write tests for this function.
+ */
+export async function requestPasswordReset(
+  email: string,
+  resetType: 'fgp' | 'newusr' | 'admreq' = 'fgp',
+  auth = defaultAuth
+): Promise<void> {
+  try {
+    // Build redirectTo URL with reset type parameter
+    const baseUrl = '/reset-password';
+    const redirectTo = resetType === 'fgp' ? baseUrl : `${baseUrl}?typ=${resetType}`;
+    
+    await auth.api.forgetPassword({
+      body: {
+        email,
+        redirectTo
+      }
+    });
+  } catch (error) {
+    console.error(`Error requesting password reset for user (${email}):`, error);
+    throw error;
+  }
+}
+
+/**
+ * Resets a user's password using a reset token.
+ * TODO: Write tests for this function.
+ */
+export async function resetPassword(
+  newPassword: string,
+  token: string,
+  auth = defaultAuth
+): Promise<void> {
+  try {
+    await auth.api.resetPassword({
+      body: {
+        newPassword,
+        token
+      }
+    });
+  } catch (error) {
+    console.error(`Error resetting password with token:`, error);
+    throw error;
   }
 }

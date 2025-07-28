@@ -72,5 +72,19 @@ export interface CreateUserData {
     email: string;
     password: string; // Password is required for user creation via admin API
     role?: AssignableRole | AssignableRole[];
+    defaultBranchId?: string;
+    assignedBranches?: string[];
+    phoneNumber?: string;
+    data?: Record<string, any>;
+}
+
+
+export interface UpdateUserData {
+    name?: string;
+    email?: string;
+    role?: AssignableRole | AssignableRole[];
+    defaultBranchId?: string;
+    assignedBranches?: string[];
+    phoneNumber?: string;
     data?: Record<string, any>;
 }

@@ -6,10 +6,22 @@ import { authClient } from '@/lib/auth-client';
 import { switchActiveBranch } from '@/lib/actions/branch-actions';
 
 
+// Virtual branch for 'all branches' option
+const ALL_BRANCHES_OPTION = {
+  id: 'all',
+  name: 'All Branches',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  address: null,
+  phone: null,
+};
+
 interface BranchContextType {
-  activeBranch: Branch | null;
+  activeBranch: Branch | null | typeof ALL_BRANCHES_OPTION;
   setActiveBranch: (branchId: string) => void;
   userBranches: Branch[];
+  allBranchesOption: typeof ALL_BRANCHES_OPTION;
+  isAllBranches: boolean;
 }
 
 const BranchContext = createContext<BranchContextType | undefined>(undefined);
@@ -18,7 +30,10 @@ export function BranchProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = authClient.useSession();
   const [activeBranch, setActiveBranchState] = useState<Branch | null>(null);
   const [userBranches, setUserBranches] = useState<Branch[]>([]);
-
+  
+  if(session?.user){
+    console.log(document.cookie);
+  }
   useEffect(() => {
     if (session?.user) {
       const assignedBranchesString = session.user.assignedBranches as unknown as string;
@@ -40,6 +55,12 @@ export function BranchProvider({ children }: { children: ReactNode }) {
   }, [session, isPending]);
 
   const handleSetBranch = async (branchId: string) => {
+    if (branchId === 'all') {
+      setActiveBranchState(ALL_BRANCHES_OPTION);
+      await switchActiveBranch(branchId);
+      return;
+    }
+    
     const branch = userBranches.find(b => b.id === branchId);
     if (branch) {
       setActiveBranchState(branch);
@@ -47,12 +68,21 @@ export function BranchProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  if (isPending) {
+  if (isPending || !activeBranch) {
+    //load proper spinner
     return <div>Loading...</div>; // Or a proper loading spinner
   }
 
+  const isAllBranches = activeBranch?.id === 'all';
+
   return (
-    <BranchContext.Provider value={{ activeBranch, setActiveBranch: handleSetBranch, userBranches }}>
+    <BranchContext.Provider value={{ 
+      activeBranch, 
+      setActiveBranch: handleSetBranch, 
+      userBranches, 
+      allBranchesOption: ALL_BRANCHES_OPTION,
+      isAllBranches
+    }}>
       {children}
     </BranchContext.Provider>
   );

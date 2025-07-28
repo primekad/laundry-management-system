@@ -13,7 +13,7 @@
 - `lib/auth/session.ts` - Functions for managing user sessions (e.g., getting current user, checking auth status).
 - `lib/auth/roles.ts` - LoginDefinitions and logic for role-based access control.
 - `lib/prisma/schema.prisma` - Prisma schema definition, will need updates for User model (roles, branches, isActive flag).
-- `lib/actions/auth.ts` - Server actions for handling login, logout, password reset requests.
+- `lib/actions/auth-actions.ts` - Server actions for handling login, logout, password reset requests.
 - `lib/actions/users.ts` - Server actions for admin user management (CRUD operations).
 - `middleware.ts` - Next.js middleware for protecting routes based on authentication status and roles.
 - `tests/e2e/auth.spec.ts` - E2E tests for authentication flows (login, logout, role access).
@@ -43,7 +43,7 @@
     - [x] 2.1.1 Implement email and password input fields.
     - [x] 2.1.2 Implement "Remember me" checkbox functionality.
     - [x] 2.1.3 Implement "Forgot password?" link.
-  - [x] 2.2 Create server action (`server-actions/auth.ts`) for handling login form submission.
+  - [x] 2.2 Create server action (`server-actions/auth-actions.ts`) for handling login form submission.
     - [x] 2.2.1 Validate credentials using Better Auth.
     - [x] 2.2.2 Create user session upon successful login.
     - [x] 2.2.3 Handle login errors and display appropriate messages on the Login Page.

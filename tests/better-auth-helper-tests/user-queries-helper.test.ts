@@ -7,7 +7,7 @@ import {join} from 'path';
 import Database from 'better-sqlite3';
 import {createTestUser, testUsers,} from '@/tests/better-auth-helper-tests/__helpers/seed/seed-helper';
 
-const testDbPath = join(__dirname, './__helpers/test.db');
+const testDbPath = join(__dirname, './__helpers/test-queries.db');
 const baseAuthOptions = getBetterAuthOptions();
 
 const testAuth = betterAuth({

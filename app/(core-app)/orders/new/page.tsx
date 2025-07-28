@@ -1,6 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { useQueryClient } from "@tanstack/react-query"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useQuery } from "@tanstack/react-query"
+import { Customer, LaundryCategory, ServiceType, Service } from "@prisma/client"
+import { z } from "zod"
+import { useBranch } from "@/components/providers/branch-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,184 +17,337 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Minus, Search, Calendar, ArrowLeft } from "lucide-react"
+import { Plus, RefreshCw, Calendar, ArrowLeft, Loader2, Trash2 } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 import Link from "next/link"
+import { CustomerSearch } from "./customer-search"
+import { LaundryItemRow } from "./laundry-item-row"
+import { fetchLaundryCategories, fetchServiceTypes, fetchServices, fetchAllPricingRules, createOrder } from "../actions"
 
-const serviceTypes = ["Wash", "Iron", "Dry Clean", "Fold", "Starch"]
-const itemTypes = ["Shirt", "Dress", "Trousers", "Bed Sheet", "Curtain", "Suit", "Blouse"]
-const paymentMethods = ["Cash", "Mobile Money", "Card", "Bank Transfer"]
+const paymentMethods = ["CASH", "MOBILE_MONEY", "CARD", "BANK_TRANSFER"]
+
+// Zod schema for validation
+const orderSchema = z.object({
+  notes: z.string().optional(),
+  customInvoiceNumber: z.string().optional(),
+  orderDate: z.string().optional(),
+  expectedDeliveryDate: z.string().optional(),
+  amountPaid: z.coerce.number().min(0, "Amount must be positive"),
+  discount: z.coerce.number().min(0, "Discount must be positive"),
+  paymentMethod: z.string().min(1, "Please select a payment method"),
+})
+
+type OrderFormValues = z.infer<typeof orderSchema>
+
+// Type definition for laundry items
+interface LaundryItemType {
+  id: string
+  categoryId: string
+  serviceTypeId: string
+  quantity: number
+  size: string
+  notes: string
+  unitPrice: number
+  total: number
+}
 
 export default function NewOrderPage() {
-  const [items, setItems] = useState([
-    { id: 1, type: "", services: [], quantity: 1, color: "", label: "", unitPrice: 0, total: 0 },
-  ])
-
-  const [selectedServices, setSelectedServices] = useState<string[]>([])
-
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+  const { activeBranch } = useBranch()
+  
+  // Form setup
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<OrderFormValues>({
+    resolver: zodResolver(orderSchema),
+    defaultValues: {
+      notes: "",
+      customInvoiceNumber: "",
+      orderDate: new Date().toISOString().split('T')[0], // Default to current date
+      expectedDeliveryDate: "",
+      amountPaid: 0,
+      discount: 0,
+      paymentMethod: "",
+    },
+  })
+  
+  // State management
+  const [customer, setCustomer] = useState<Customer | null>(null)
+  const [items, setItems] = useState<LaundryItemType[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Form values
+  const discount = watch("discount") || 0
+  const amountPaid = watch("amountPaid") || 0
+  
+  // Fetch laundry categories and service types
+  const { data: categories, isLoading: isLoadingCategories } = useQuery({
+    queryKey: ["laundryCategories"],
+    queryFn: fetchLaundryCategories,
+  })
+  
+  const { data: serviceTypes, isLoading: isLoadingServiceTypes } = useQuery({
+    queryKey: ["serviceTypes"],
+    queryFn: fetchServiceTypes,
+  })
+  
+  const { data: services, isLoading: isLoadingServices } = useQuery({
+    queryKey: ["services"],
+    queryFn: fetchServices,
+  })
+  
+  // Debug: Check services data
+  console.log('Services in page component:', services)
+  
+  // Function to refresh all queries
+  const refreshQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['serviceTypes'] })
+    queryClient.invalidateQueries({ queryKey: ['services'] })
+    console.log('Queries invalidated, data should refresh')
+  }
+  
+  const { data: pricingRules, isLoading: isLoadingPricingRules } = useQuery({
+    queryKey: ["pricingRules"],
+    queryFn: fetchAllPricingRules,
+  })
+  
+  const isLoading = isLoadingCategories || isLoadingServiceTypes || isLoadingServices || isLoadingPricingRules
+  
+  // Handle customer selection
+  const handleCustomerSelect = (selectedCustomer: Customer | null) => {
+    setCustomer(selectedCustomer)
+  }
+  
+  // Handle customer creation
+  const handleCustomerCreate = (newCustomer: Customer) => {
+    setCustomer(newCustomer)
+  }
+  
+  // Add new item to order
   const addItem = () => {
     const newItem = {
-      id: items.length + 1,
-      type: "",
-      services: [...selectedServices],
+      id: `${items.length + 1}`,
+      categoryId: "",
+      serviceTypeId: "",
       quantity: 1,
-      color: "",
-      label: "",
+      size: "",
+      notes: "",
       unitPrice: 0,
       total: 0,
     }
     setItems([...items, newItem])
   }
-
-  const removeItem = (id: number) => {
+  
+  // Remove item from order
+  const removeItem = (id: string) => {
     setItems(items.filter((item) => item.id !== id))
   }
-
+  
+  // Handle item field changes
+  const handleItemChange = (index: number, field: string, value: any) => {
+    setItems(prevItems => {
+      return prevItems.map((item, i) => {
+        if (i === index) {
+          const updatedItem = { ...item, [field]: value }
+          
+          // Update total if quantity or unitPrice changes
+          if (field === 'quantity' || field === 'unitPrice') {
+            updatedItem.total = updatedItem.quantity * updatedItem.unitPrice
+          }
+          
+          return updatedItem
+        }
+        return item
+      })
+    })
+  }
+  
+  // Calculate order totals
   const subtotal = items.reduce((sum, item) => sum + item.total, 0)
+  const grandTotal = subtotal - discount
+  const balanceDue = grandTotal - amountPaid
+  
+  // Get payment status text
+  const getPaymentStatus = () => {
+    if (amountPaid <= 0) return "Unpaid"
+    if (amountPaid < grandTotal) return "Partially Paid"
+    return "Paid"
+  }
+  
+  // Form submission handler
+  const onSubmit = async (data: OrderFormValues) => {
+    if (!customer) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select or create a customer",
+      })
+      return
+    }
+    
+    if (items.length === 0 || items.some(item => !item.categoryId || !item.serviceTypeId)) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please add at least one valid laundry item",
+      })
+      return
+    }
+    
+    setIsSubmitting(true)
+    
+    try {
+      // Check if we have an active branch
+      if (!activeBranch) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No active branch selected. Please select a branch first.",
+        })
+        return
+      }
 
+      const orderData = {
+        isExistingCustomer: !!customer.id,
+        customerId: customer.id || undefined,
+        customerName: customer.name,
+        customerEmail: customer.email,
+        customerPhone: customer.phone || undefined,
+        customerAddress: customer.address || undefined,
+        items: items,
+        amountPaid: data.amountPaid,
+        discount: data.discount,
+        paymentMethod: data.paymentMethod,
+        notes: data.notes,
+        orderDate: data.orderDate || undefined,
+        expectedDeliveryDate: data.expectedDeliveryDate || undefined,
+        branchId: activeBranch.id,
+        customInvoiceNumber: data.customInvoiceNumber || undefined,
+      }
+      
+      const result = await createOrder(orderData)
+      
+      toast({
+        title: "Success",
+        description: "Order created successfully",
+      })
+      
+      // Redirect to the order details page
+      if (result && result.id) {
+        router.push(`/orders/${result.id}`)
+      } else {
+        router.push("/orders")
+      }
+    } catch (error) {
+      console.error("Error creating order:", error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
           size="sm"
-          className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
           asChild
         >
-          <Link href="/orders">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <Link href="/orders" className="flex items-center gap-1">
+            <ArrowLeft className="h-4 w-4" />
             Back to Orders
           </Link>
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Create New Order</h1>
-          <p className="text-slate-600 mt-1">Add a new laundry order to the system</p>
-        </div>
+        <h1 className="text-2xl font-bold">Create New Order</h1>
       </div>
-
+      
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
+          {/* Order Information */}
+          <Card className="border-0 shadow-card">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-slate-900">Order Information</CardTitle>
+              <CardDescription>Enter order details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Invoice Number */}
+                <div>
+                  <Label htmlFor="customInvoiceNumber">Invoice Number</Label>
+                  <Input
+                    id="customInvoiceNumber"
+                    {...register("customInvoiceNumber")}
+                    placeholder="Leave blank for auto-generated invoice number"
+                    className="mt-1"
+                  />
+                </div>
+
+                {/* Order Date */}
+                <div>
+                  <Label htmlFor="orderDate">Order Date</Label>
+                  <div className="flex items-center mt-1">
+                    <Input
+                      id="orderDate"
+                      type="date"
+                      {...register("orderDate")}
+                      className="w-full"
+                    />
+                    <Calendar className="h-4 w-4 ml-2 text-muted-foreground" />
+                  </div>
+                </div>
+
+                {/* Expected Delivery Date */}
+                <div>
+                  <Label htmlFor="expectedDeliveryDate">Expected Delivery Date</Label>
+                  <div className="flex items-center mt-1">
+                    <Input
+                      id="expectedDeliveryDate"
+                      type="date"
+                      {...register("expectedDeliveryDate")}
+                      className="w-full"
+                    />
+                    <Calendar className="h-4 w-4 ml-2 text-muted-foreground" />
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="md:col-span-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    {...register("notes")}
+                    placeholder="Add any special instructions or notes about this order"
+                    className="min-h-[80px] mt-1"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Customer Information */}
           <Card className="border-0 shadow-card">
             <CardHeader>
               <CardTitle className="text-xl font-bold text-slate-900">Customer Information</CardTitle>
-              <CardDescription>Enter customer details or search existing customers</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <div className="relative">
-                    <Input
-                      id="phone"
-                      placeholder="0244123456"
-                      className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    />
-                    <Search className="absolute right-3 top-3 h-4 w-4 text-slate-400" />
-                  </div>
-                </div>
-                <Button variant="outline" className="mt-6 bg-white border-slate-200 text-slate-700 hover:bg-slate-50">
-                  Search
-                </Button>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="name">Customer Name *</Label>
-                  <Input
-                    id="name"
-                    placeholder="John Doe"
-                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email (Optional)</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="address">Address (Optional)</Label>
-                <Textarea
-                  id="address"
-                  placeholder="Customer address"
-                  className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Order Details */}
-          <Card className="border-0 shadow-card">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-slate-900">Order Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <Label htmlFor="invoice">Invoice Number</Label>
-                  <Input
-                    id="invoice"
-                    placeholder="Auto-generated"
-                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="orderDate">Order Date</Label>
-                  <div className="relative">
-                    <Input
-                      id="orderDate"
-                      type="date"
-                      className="bg-white border-slate-200 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    />
-                    <Calendar className="absolute right-3 top-3 h-4 w-4 text-slate-400" />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="deliveryDate">Expected Delivery</Label>
-                  <div className="relative">
-                    <Input
-                      id="deliveryDate"
-                      type="date"
-                      className="bg-white border-slate-200 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    />
-                    <Calendar className="absolute right-3 top-3 h-4 w-4 text-slate-400" />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Default Service Types */}
-          <Card className="border-0 shadow-card">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-slate-900">Default Service Types</CardTitle>
-              <CardDescription>Select default services for all items (can be overridden per item)</CardDescription>
+              <CardDescription>Search for existing customer or add a new one</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {serviceTypes.map((service) => (
-                  <Badge
-                    key={service}
-                    variant={selectedServices.includes(service) ? "default" : "outline"}
-                    className="cursor-pointer hover:bg-primary/10 transition-colors"
-                    onClick={() => {
-                      setSelectedServices((prev) =>
-                        prev.includes(service) ? prev.filter((s) => s !== service) : [...prev, service],
-                      )
-                    }}
-                  >
-                    {service}
-                  </Badge>
-                ))}
-              </div>
+              <CustomerSearch
+                onSelectCustomer={handleCustomerSelect}
+              />
             </CardContent>
           </Card>
-
+          
           {/* Laundry Items */}
           <Card className="border-0 shadow-card">
             <CardHeader>
@@ -194,95 +355,74 @@ export default function NewOrderPage() {
               <CardDescription>Add items to this order</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-slate-200">
-                    <TableHead className="font-bold text-slate-700">Item Type</TableHead>
-                    <TableHead className="font-bold text-slate-700">Services</TableHead>
-                    <TableHead className="font-bold text-slate-700">Qty</TableHead>
-                    <TableHead className="font-bold text-slate-700">Color</TableHead>
-                    <TableHead className="font-bold text-slate-700">Notes</TableHead>
-                    <TableHead className="font-bold text-slate-700">Unit Price</TableHead>
-                    <TableHead className="font-bold text-slate-700">Total</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item) => (
-                    <TableRow key={item.id} className="border-slate-100">
-                      <TableCell>
-                        <Select>
-                          <SelectTrigger className="w-32 bg-white border-slate-200">
-                            <SelectValue placeholder="Select item" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {itemTypes.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
-                              </SelectItem>
+              <div className="space-y-4">
+                {isLoading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-muted-foreground">Loading...</span>
+                  </div>
+                ) : (
+                  <>
+                    {items.length === 0 ? (
+                      <div className="text-center p-6 text-muted-foreground">
+                        No items added yet. Click "Add Item" to begin.
+                      </div>
+                    ) : (
+                      <div className="w-full">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="border-b mb-2">
+                              <th className="text-left py-2 font-medium text-slate-600">Item Type</th>
+                              <th className="text-left py-2 font-medium text-slate-600">Service</th>
+                              <th className="text-left py-2 font-medium text-slate-600">Qty</th>
+                              <th className="text-left py-2 font-medium text-slate-600">Size</th>
+                              <th className="text-left py-2 font-medium text-slate-600">Notes</th>
+                              <th className="text-left py-2 font-medium text-slate-600">Unit Price</th>
+                              <th className="text-left py-2 font-medium text-slate-600">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {items.map((item, index) => (
+                              <tr key={item.id} className="border-b last:border-b-0">
+                                <LaundryItemRow
+                                  key={item.id}
+                                  index={index}
+                                  item={item}
+                                  categories={categories || []}
+                                  serviceTypes={(serviceTypes || []) as any}
+                                  services={(services || []) as any}
+                                  pricingRules={pricingRules as any || []}
+                                  onChangeField={handleItemChange}
+                                  onRemove={() => removeItem(item.id)}
+                                />
+                              </tr>
                             ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedServices.map((service) => (
-                            <Badge key={service} variant="secondary" className="text-xs">
-                              {service}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          className="w-16 bg-white border-slate-200 text-slate-900 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          defaultValue="1"
-                          min="1"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          className="w-20 bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          placeholder="Blue"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          className="w-32 bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          placeholder="Special notes"
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">₵15.00</TableCell>
-                      <TableCell className="font-bold">₵15.00</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeItem(item.id)}
-                          disabled={items.length === 1}
-                          className="hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-2">
 
-              <Button
-                variant="outline"
-                onClick={addItem}
-                className="mt-4 bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Another Item
-              </Button>
+                      <Button
+                        variant="outline"
+                        onClick={addItem}
+                        className="flex w-full items-center justify-center"
+                        type="button"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Item
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             </CardContent>
           </Card>
-        </div>
+          
 
+        </div>
+        
         {/* Summary & Payment */}
         <div className="space-y-6">
           <Card className="border-0 shadow-card">
@@ -290,31 +430,31 @@ export default function NewOrderPage() {
               <CardTitle className="text-xl font-bold text-slate-900">Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Subtotal:</span>
-                  <span className="font-medium">₵{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Discount:</span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal:</span>
+                <span>GHS {subtotal.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Discount:</span>
+                <div className="w-24">
                   <Input
-                    className="w-20 text-right bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    placeholder="0.00"
+                    type="number"
+                    {...register("discount")}
+                    className="text-right"
+                    min="0"
                   />
                 </div>
-                <div className="border-t pt-3">
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Grand Total:</span>
-                    <span>₵{subtotal.toFixed(2)}</span>
-                  </div>
-                </div>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span>Total:</span>
+                <span>GHS {grandTotal.toLocaleString()}</span>
               </div>
             </CardContent>
           </Card>
-
+          
           <Card className="border-0 shadow-card">
             <CardHeader>
-              <CardTitle className="text-xl font-bold text-slate-900">Payment Information</CardTitle>
+              <CardTitle className="text-xl font-bold text-slate-900">Payment</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -322,71 +462,71 @@ export default function NewOrderPage() {
                 <Input
                   id="amountPaid"
                   type="number"
-                  placeholder="0.00"
-                  className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  min="0"
+                  {...register("amountPaid")}
+                  className="mt-1"
                 />
+                {errors.amountPaid && (
+                  <span className="text-sm text-red-500">{errors.amountPaid.message}</span>
+                )}
               </div>
-
+              
               <div>
                 <Label htmlFor="paymentMethod">Payment Method</Label>
-                <Select>
-                  <SelectTrigger className="bg-white border-slate-200">
-                    <SelectValue placeholder="Select method" />
+                <Select
+                  onValueChange={(value) => setValue("paymentMethod", value)}
+                  defaultValue=""
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>
                     {paymentMethods.map((method) => (
                       <SelectItem key={method} value={method}>
-                        {method}
+                        {method.replace("_", " ")}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.paymentMethod && (
+                  <span className="text-sm text-red-500">{errors.paymentMethod.message}</span>
+                )}
               </div>
-
-              <div className="space-y-2 pt-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Balance Due:</span>
-                  <span className="font-medium">₵{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Payment Status:</span>
-                  <Badge variant="destructive">Unpaid</Badge>
-                </div>
+              
+              <div className="flex justify-between font-medium">
+                <span>Balance Due:</span>
+                <span className={balanceDue > 0 ? "text-red-500" : "text-green-500"}>
+                  GHS {balanceDue.toLocaleString()}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span>Payment Status:</span>
+                <Badge variant={
+                  getPaymentStatus() === "Paid" ? "default" :
+                  getPaymentStatus() === "Partially Paid" ? "secondary" : "destructive"
+                }>
+                  {getPaymentStatus()}
+                </Badge>
               </div>
             </CardContent>
           </Card>
-
-          <Card className="border-0 shadow-card">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold text-slate-900">Order Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Select defaultValue="pending">
-                <SelectTrigger className="bg-white border-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="washing">Washing</SelectItem>
-                  <SelectItem value="ironing">Ironing</SelectItem>
-                  <SelectItem value="ready">Ready</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-3">
-            <Button className="w-full bg-primary hover:bg-primary/90" size="lg">
-              Save Order
-            </Button>
-            <Button variant="outline" className="w-full bg-white border-slate-200 text-slate-700 hover:bg-slate-50">
-              Print Receipt
-            </Button>
-            <Button variant="outline" className="w-full bg-white border-slate-200 text-slate-700 hover:bg-slate-50">
-              Send SMS Notification
-            </Button>
-          </div>
+          
+          <Button
+            type="button"
+            className="w-full"
+            disabled={isSubmitting}
+            onClick={handleSubmit(onSubmit)}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating Order...
+              </>
+            ) : (
+              "Create Order"
+            )}
+          </Button>
         </div>
       </div>
     </div>

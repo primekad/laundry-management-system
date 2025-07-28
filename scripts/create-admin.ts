@@ -1,11 +1,19 @@
 import {auth} from "@/lib/auth";
-import {doesUserExist} from "@/lib/users/user-queries";
 import {DEFAULT_ADMIN} from "@/constants";
+import {db} from "@/lib/db";
 
 export async function createSystemAdmin() {
     console.log('Checking for system admin user...');
+    //check with prisma if user exists
+    const user = await db.user.findUnique({
+        where: {
+            email: DEFAULT_ADMIN.email
+        }
+    });
+    console.log(user);
+    
     try{
-            if(true){
+            if(user===null){
                 console.log(`Creating system admin user: ${DEFAULT_ADMIN.email}`);
                 await auth.api.createUser({
                     body: {

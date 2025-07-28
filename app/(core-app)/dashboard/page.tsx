@@ -9,50 +9,96 @@ import { MetricCard } from "@/components/ui/metric-card"
 import { DollarSign, ShoppingBag, Eye, Edit, Printer, ArrowUpRight, Users, Clock, Download } from "lucide-react"
 import { ResponsiveContainer, XAxis, YAxis, Tooltip, Area, AreaChart, Bar, BarChart } from "recharts"
 import Link from "next/link"
-import {authClient} from "@/lib/auth-client";
-import router from "next/router";
-import {redirect} from "next/navigation";
+import { format } from "date-fns"
+import { useBranch } from "@/components/providers/branch-provider"
+import { useQuery } from "@tanstack/react-query"
 
-const revenueData = [
-  { day: "Mon", revenue: 1200, orders: 15 },
-  { day: "Tue", revenue: 1800, orders: 22 },
-  { day: "Wed", revenue: 1500, orders: 18 },
-  { day: "Thu", revenue: 2200, orders: 28 },
-  { day: "Fri", revenue: 2800, orders: 35 },
-  { day: "Sat", revenue: 3200, orders: 42 },
-  { day: "Sun", revenue: 2100, orders: 26 },
-]
-
-const orderStatusData = [
-  { status: "Pending", count: 8, color: "#dc2626" },
-  { status: "Washing", count: 15, color: "#2563eb" },
-  { status: "Ironing", count: 12, color: "#d97706" },
-  { status: "Ready", count: 23, color: "#059669" },
-  { status: "Delivered", count: 145, color: "#64748b" },
-]
-
-const recentOrders = [
-  { invoice: "INV-2025-001", customer: "Sarah Johnson", status: "Ready", amount: "₵85.00", time: "2 hours ago" },
-  { invoice: "INV-2025-002", customer: "Michael Chen", status: "Washing", amount: "₵120.50", time: "4 hours ago" },
-  { invoice: "INV-2025-003", customer: "Emma Davis", status: "Ironing", amount: "₵95.00", time: "6 hours ago" },
-  { invoice: "INV-2025-004", customer: "James Wilson", status: "Delivered", amount: "₵150.00", time: "1 day ago" },
-  { invoice: "INV-2025-005", customer: "Lisa Brown", status: "Pending", amount: "₵75.50", time: "2 days ago" },
-]
-
-const getStatusBadge = (status: string) => {
-  const variants = {
-    Pending: "bg-red-50 text-red-700 border-red-200",
-    Washing: "bg-blue-50 text-blue-700 border-blue-200",
-    Ironing: "bg-amber-50 text-amber-700 border-amber-200",
-    Ready: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    Delivered: "bg-slate-50 text-slate-700 border-slate-200",
+// Data fetching functions
+async function fetchDashboardStats(branchId: string | null) {
+  const url = branchId ? `/api/dashboard/stats?branchId=${branchId}` : '/api/dashboard/stats';
+  console.log(url);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch dashboard stats');
   }
-  return <Badge className={cn("font-medium border", variants[status as keyof typeof variants])}>{status}</Badge>
+  return response.json();
+}
+
+async function fetchRevenueChartData(branchId: string | null) {
+  const url = branchId ? `/api/dashboard/revenue-chart?branchId=${branchId}` : '/api/dashboard/revenue-chart';
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch revenue chart data');
+  }
+  return response.json();
+}
+
+async function fetchRecentOrders(branchId: string | null) {
+  const url = branchId ? `/api/dashboard/recent-orders?branchId=${branchId}` : '/api/dashboard/recent-orders';
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch recent orders');
+  }
+  return response.json();
+}
+
+async function fetchOrderStatusDistribution(branchId: string | null) {
+  const url = branchId ? `/api/dashboard/order-status?branchId=${branchId}` : '/api/dashboard/order-status';
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch order status distribution');
+  }
+  return response.json();
+}
+
+// Helper function to get status badge styling
+const getStatusBadge = (status: string) => {
+  const variants: Record<string, string> = {
+    "PENDING": "bg-red-50 text-red-700 border-red-200",
+    "WASHING": "bg-blue-50 text-blue-700 border-blue-200",
+    "IRONING": "bg-amber-50 text-amber-700 border-amber-200", 
+    "READY": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    "COMPLETED": "bg-slate-50 text-slate-700 border-slate-200",
+    "DELIVERED": "bg-slate-50 text-slate-700 border-slate-200",
+  }
+  return <Badge className={cn("font-medium border", variants[status] || "bg-gray-50 text-gray-700 border-gray-200")}>{status}</Badge>
 }
 
 export default function DashboardPage() {
+  const { activeBranch, isAllBranches, isLoading:isBranchLoading, setActiveBranch } = useBranch();
+  
+  // Use either the branch ID or null for "all branches" option
+  const branchId = isAllBranches ? "all" : (activeBranch?.id || null);
 
-  const {data:session} = authClient.useSession();
+  // Fetch dashboard data using TanStack Query
+  const { data: stats, isLoading: isLoadingStats } = useQuery({
+    queryKey: ['dashboardStats', branchId],
+    queryFn: () => {console.log(`branchId is ${activeBranch?.id} when isBranchLoading is ${isBranchLoading}`); return fetchDashboardStats(branchId)},
+    enabled: !isBranchLoading,
+  });
+
+  const { data: chartData, isLoading: isLoadingChart } = useQuery({
+    queryKey: ['revenueChart', branchId],
+    queryFn: () => fetchRevenueChartData(branchId),
+    enabled: !isBranchLoading,
+  });
+
+  const { data: recentOrders, isLoading: isLoadingOrders } = useQuery({
+    queryKey: ['recentOrders', branchId],
+    queryFn: () => fetchRecentOrders(branchId),
+    enabled: !isBranchLoading,
+  });
+  
+  const { data: orderStatusData, isLoading: isLoadingOrderStatus } = useQuery({
+    queryKey: ['orderStatusDistribution', branchId],
+    queryFn: () => fetchOrderStatusDistribution(branchId),
+    enabled: !isBranchLoading,
+  });
+
+  // Loading state
+  if (isLoadingStats || isLoadingChart || isLoadingOrders || isLoadingOrderStatus) {
+    return <div className="p-8 text-center">Loading dashboard data...</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -60,9 +106,25 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-slate-600 mt-2 text-lg">Welcome back! Here's what's happening with your business today.</p>
+          <p className="text-slate-600 mt-2 text-lg">
+            Welcome back! {isAllBranches ? 'Viewing all branches.' : `Viewing: ${activeBranch?.name}`}
+          </p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex space-x-2">
+            <Button 
+              variant={isAllBranches ? "default" : "outline"}
+              onClick={() => setActiveBranch('all')}
+              className="mr-2"
+            >
+              All Branches
+            </Button>
+            {activeBranch && !isAllBranches && (
+              <Badge variant="outline" className="text-lg">
+                Branch: {activeBranch.name}
+              </Badge>
+            )}
+          </div>
           <Button variant="outline" size="lg" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
             <Download className="h-4 w-4 mr-2" />
             Export Data
@@ -79,30 +141,42 @@ export default function DashboardPage() {
       {/* Metrics */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Today's Revenue"
-          value="₵3,200"
-          change={{ value: "+35% from yesterday", trend: "up" }}
+          title="Weekly Revenue"
+          value={`₵${stats?.weeklyRevenue?.toFixed(2) || '0.00'}`}
+          change={{ 
+            value: `${stats?.revenueChangePercentage || 0}% from last week`, 
+            trend: stats?.revenueTrend || "neutral"
+          }}
           icon={DollarSign}
           gradient="from-emerald-500 to-emerald-600"
         />
         <MetricCard
-          title="Today's Orders"
-          value="42"
-          change={{ value: "+8% from yesterday", trend: "up" }}
+          title="Weekly Orders"
+          value={stats?.weeklyOrders || '0'}
+          change={{ 
+            value: `${stats?.ordersChangePercentage || 0}% from last week`, 
+            trend: stats?.ordersTrend || "neutral"
+          }}
           icon={ShoppingBag}
           gradient="from-blue-500 to-blue-600"
         />
         <MetricCard
           title="New Clients"
-          value="8"
-          change={{ value: "-14% from yesterday", trend: "down" }}
+          value={stats?.newClients || '0'}
+          change={{ 
+            value: `${stats?.clientsChangePercentage || 0}% from last week`, 
+            trend: stats?.clientsTrend || "neutral" 
+          }}
           icon={Users}
           gradient="from-purple-500 to-purple-600"
         />
         <MetricCard
           title="Avg. Processing Time"
-          value="2.4 hrs"
-          change={{ value: "-12% improvement", trend: "up" }}
+          value={`${stats?.avgProcessingTime || '0'} hrs`}
+          change={{ 
+            value: `${stats?.processingTimeChangePercentage || 0}% from last week`, 
+            trend: stats?.processingTimeTrend === 'up' ? 'down' : 'up' // Inverse for processing time
+          }}
           icon={Clock}
           gradient="from-amber-500 to-amber-600"
         />
@@ -123,7 +197,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pt-0">
             <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={revenueData}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -139,6 +213,7 @@ export default function DashboardPage() {
                     borderRadius: "12px",
                     boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
                   }}
+                  formatter={(value: any) => [`₵${value}`, 'Revenue']}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={3} fill="url(#colorRevenue)" />
               </AreaChart>
@@ -206,25 +281,29 @@ export default function DashboardPage() {
                 <TableHead className="font-bold text-slate-700">Customer</TableHead>
                 <TableHead className="font-bold text-slate-700">Status</TableHead>
                 <TableHead className="font-bold text-slate-700">Amount</TableHead>
-                <TableHead className="font-bold text-slate-700">Time</TableHead>
+                <TableHead className="font-bold text-slate-700">Date</TableHead>
                 <TableHead className="text-right font-bold text-slate-700">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentOrders.map((order) => (
-                <TableRow key={order.invoice} className="border-slate-100 hover:bg-slate-50/50">
-                  <TableCell className="font-bold text-slate-900">{order.invoice}</TableCell>
-                  <TableCell className="font-medium text-slate-900">{order.customer}</TableCell>
+              {recentOrders && recentOrders.map((order: any) => (
+                <TableRow key={order.id} className="border-slate-100 hover:bg-slate-50/50">
+                  <TableCell className="font-bold text-slate-900">{order.invoiceNumber || `ORD-${order.id}`}</TableCell>
+                  <TableCell className="font-medium text-slate-900">{order.customer.name}</TableCell>
                   <TableCell>{getStatusBadge(order.status)}</TableCell>
-                  <TableCell className="font-bold text-slate-900">{order.amount}</TableCell>
-                  <TableCell className="text-slate-600">{order.time}</TableCell>
+                  <TableCell className="font-bold text-slate-900">₵{order.totalAmount.toFixed(2)}</TableCell>
+                  <TableCell className="text-slate-600">{format(new Date(order.createdAt), 'dd/MM/yyyy')}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100">
-                        <Eye className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100" asChild>
+                        <Link href={`/orders/${order.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100">
-                        <Edit className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100" asChild>
+                        <Link href={`/orders/${order.id}/edit`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
                       </Button>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100">
                         <Printer className="h-4 w-4" />
@@ -238,5 +317,5 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

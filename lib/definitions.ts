@@ -1,11 +1,9 @@
-export type User = {
-  id: string;
-  name: string | null;
-  email: string;
-  role: string;
-  isActive: boolean;
-  createdAt: Date;
-  defaultBranch: {
-    name: string;
-  } | null;
+import { User as PrismaUser, Branch as PrismaBranch } from '@prisma/client';
+
+export type User = PrismaUser & {
+  defaultBranch: PrismaBranch | null;
+  assignedBranches: PrismaBranch[];
 };
+
+export type Branch = PrismaBranch;
+

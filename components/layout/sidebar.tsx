@@ -200,7 +200,7 @@ export function Sidebar() {
 
           <div className="space-y-2">
             <div className={cn("mb-4 px-3", collapsed ? "hidden" : "block")}>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">System</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Settings</h3>
             </div>
             <nav className="space-y-1">
               {settingsNavItems.map((item) => {
