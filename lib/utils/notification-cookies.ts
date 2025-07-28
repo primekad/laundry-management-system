@@ -56,3 +56,5 @@ export async function setInfoNotification(message: string): Promise<void> {
 export async function setWarningNotification(message: string): Promise<void> {
   return setNotificationCookie('warning', message);
 }
+
+

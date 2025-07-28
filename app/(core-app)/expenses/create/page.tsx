@@ -1,32 +1,42 @@
-import { getExpenseCategories } from "../../admin/expense-categories/actions";
-import { ExpenseForm } from "../expense-form";
-import { fetchBranches } from "@/lib/data/branches";
-import { fetchUsers } from "@/lib/data/users";
+import { ExpenseFormStandardized as ExpenseForm } from '../expense-form-standardized';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  getExpenseCategories,
+  getBranches,
+  getUsers,
+  getAvailableOrders
+} from '@/lib/data/expense-queries';
+import Breadcrumbs from '@/components/ui/breadcrumbs';
 
 export default async function CreateExpensePage() {
-  const [categories, branches, users] = await Promise.all([
+  const [categories, branches, users, orders] = await Promise.all([
     getExpenseCategories(),
-    fetchBranches(),
-    fetchUsers(),
+    getBranches(),
+    getUsers(),
+    getAvailableOrders(),
   ]);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Create Expense</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Expense Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ExpenseForm categories={categories} branches={branches} users={users} />
-        </CardContent>
-      </Card>
-    </div>
+    <main>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            label: 'Expenses',
+            href: '/expenses',
+          },
+          {
+            label: 'Create Expense',
+            href: '/expenses/create',
+            active: true,
+          },
+        ]}
+      />
+      <ExpenseForm
+        categories={categories}
+        branches={branches}
+        users={users}
+        orders={orders}
+        intent="create"
+      />
+    </main>
   );
 }

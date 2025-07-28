@@ -1,85 +1,154 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { deleteExpense } from "./actions";
-import { toast } from "sonner";
-import Link from "next/link";
-import { Expense } from "@/lib/types";
+import { ArrowUpDown, Eye } from "lucide-react";
+import { format } from "date-fns";
+import type { ExpenseListItem } from "./types";
+import { ExpenseActions } from "./buttons";
 
-export const columns: ColumnDef<Expense>[] = [
-  {
-    accessorKey: "date",
-    header: "Date",
-    cell: ({ row }) => new Date(row.original.date).toLocaleDateString(),
-  },
+export const columns: ColumnDef<ExpenseListItem>[] = [
   {
     accessorKey: "description",
-    header: "Description",
-  },
-  {
-    accessorKey: "amount",
-    header: "Amount",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold text-slate-700 hover:bg-transparent"
+        >
+          Description
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "GHS",
-      }).format(amount);
-      return <div className="font-medium">{formatted}</div>;
+      const description = row.getValue("description") as string;
+      return (
+        <div className="space-y-1">
+          <div className="font-medium text-slate-900 max-w-[200px] truncate" title={description}>
+            {description}
+          </div>
+          <div className="text-sm text-slate-600">
+            {row.original.category.name}
+          </div>
+        </div>
+      );
+    },
+    filterFn: (row, id, value) => {
+      const description = row.getValue(id) as string;
+      const category = row.original.category.name;
+      const searchValue = value.toLowerCase();
+      return (
+        description.toLowerCase().includes(searchValue) ||
+        category.toLowerCase().includes(searchValue)
+      );
     },
   },
   {
-    accessorKey: "category.name",
-    header: "Category",
+    accessorKey: "amount",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold text-slate-700 hover:bg-transparent"
+        >
+          Amount
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const amount = parseFloat(row.getValue("amount"));
+      const formatted = new Intl.NumberFormat("en-GH", {
+        style: "currency",
+        currency: "GHS",
+      }).format(amount);
+
+      return <div className="font-medium text-slate-900">{formatted}</div>;
+    },
   },
   {
-    accessorKey: "user.name",
-    header: "Added By",
+    accessorKey: "date",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold text-slate-700 hover:bg-transparent"
+        >
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const date = row.getValue("date") as Date;
+      return (
+        <div className="space-y-1">
+          <div className="text-slate-900">{format(date, "MMM dd, yyyy")}</div>
+          <div className="text-sm text-slate-600">{format(date, "HH:mm")}</div>
+        </div>
+      );
+    },
   },
   {
-    accessorKey: "branch.name",
+    accessorKey: "branch",
     header: "Branch",
+    cell: ({ row }) => {
+      const branch = row.getValue("branch") as ExpenseListItem["branch"];
+      return (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          {branch.name}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "user",
+    header: "User",
+    cell: ({ row }) => {
+      const user = row.getValue("user") as ExpenseListItem["user"];
+      return (
+        <div className="text-slate-900">{user.name}</div>
+      );
+    },
+  },
+  {
+    accessorKey: "order",
+    header: "Order",
+    cell: ({ row }) => {
+      const order = row.getValue("order") as ExpenseListItem["order"];
+      return order ? (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          {order.invoiceNumber}
+        </Badge>
+      ) : (
+        <span className="text-slate-400">-</span>
+      );
+    },
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    header: "Actions",
+    cell: ({ row, table }) => {
       const expense = row.original;
+      const meta = table.options.meta;
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link href={`/expenses/${expense.id}`}>Edit</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={async () => {
-                toast.promise(deleteExpense(expense.id), {
-                  loading: "Deleting expense...",
-                  success: "Expense deleted successfully",
-                  error: "Failed to delete expense",
-                });
-              }}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => meta?.viewExpense?.(expense)}
+            className="h-8 px-2 text-slate-600 hover:text-slate-900"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <ExpenseActions expense={expense} />
+        </div>
       );
     },
   },

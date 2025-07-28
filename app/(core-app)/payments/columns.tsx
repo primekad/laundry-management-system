@@ -1,93 +1,147 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { deletePayment } from "./actions";
-import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
-import Link from "next/link";
-import { Payment } from "@/lib/types";
+import { ArrowUpDown, Eye } from "lucide-react";
+import { format } from "date-fns";
+import type { PaymentListItem } from "./types";
+import { PaymentActions } from "./buttons";
 
-export const columns: ColumnDef<Payment>[] = [
+export const columns: ColumnDef<PaymentListItem>[] = [
   {
-    id: "customerName",
-    accessorKey: "order.customer.name",
-    header: "Customer",
+    accessorKey: "order",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold text-slate-700 hover:bg-transparent"
+        >
+          Order / Customer
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const order = row.getValue("order") as PaymentListItem["order"];
+      return (
+        <div className="space-y-1">
+          <div className="font-medium text-slate-900">{order.invoiceNumber}</div>
+          <div className="text-sm text-slate-600">{order.customer.name}</div>
+        </div>
+      );
+    },
+    filterFn: (row, id, value) => {
+      const order = row.getValue(id) as PaymentListItem["order"];
+      const searchValue = value.toLowerCase();
+      return (
+        order.invoiceNumber.toLowerCase().includes(searchValue) ||
+        order.customer.name.toLowerCase().includes(searchValue)
+      );
+    },
   },
   {
     accessorKey: "amount",
-    header: "Amount",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold text-slate-700 hover:bg-transparent"
+        >
+          Amount
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("amount"));
-      const formatted = new Intl.NumberFormat("en-US", {
+      const formatted = new Intl.NumberFormat("en-GH", {
         style: "currency",
-        currency: "GHS", // TODO: Make this dynamic
+        currency: "GHS",
       }).format(amount);
 
-      return <div className="font-medium">{formatted}</div>;
+      return <div className="font-medium text-slate-900">{formatted}</div>;
     },
   },
   {
     accessorKey: "paymentMethod",
-    header: "Payment Method",
+    header: "Method",
     cell: ({ row }) => {
-      return <Badge>{row.getValue("paymentMethod")}</Badge>;
+      const method = row.getValue("paymentMethod") as string;
+      return (
+        <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
+          {method.replace("_", " ")}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+
+      const statusConfig = {
+        PAID: { variant: "default" as const, className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+        PENDING: { variant: "secondary" as const, className: "bg-amber-100 text-amber-800 border-amber-200" },
+        FAILED: { variant: "destructive" as const, className: "bg-red-100 text-red-800 border-red-200" },
+        REFUNDED: { variant: "outline" as const, className: "bg-slate-100 text-slate-800 border-slate-200" },
+      };
+
+      const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
+
+      return (
+        <Badge variant={config.variant} className={config.className}>
+          {status}
+        </Badge>
+      );
     },
   },
   {
     accessorKey: "createdAt",
-    header: "Date",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-semibold text-slate-700 hover:bg-transparent"
+        >
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
     cell: ({ row }) => {
-      const dateValue = row.getValue("createdAt");
-      // Check if the value is already a Date object or needs parsing
-      const date = dateValue instanceof Date 
-        ? dateValue 
-        : typeof dateValue === 'string'
-          ? parseISO(dateValue)
-          : new Date();
-      return format(date, "dd/MM/yyyy");
+      const date = row.getValue("createdAt") as Date;
+      return (
+        <div className="space-y-1">
+          <div className="text-slate-900">{format(date, "MMM dd, yyyy")}</div>
+          <div className="text-sm text-slate-600">{format(date, "HH:mm")}</div>
+        </div>
+      );
     },
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    header: "Actions",
+    cell: ({ row, table }) => {
       const payment = row.original;
+      const meta = table.options.meta;
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link href={`/payments/${payment.id}`}>Edit</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={async () => {
-                toast.promise(deletePayment(payment.id), {
-                  loading: "Deleting payment...",
-                  success: "Payment deleted successfully",
-                  error: "Failed to delete payment",
-                });
-              }}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => meta?.viewPayment?.(payment)}
+            className="h-8 px-2 text-slate-600 hover:text-slate-900"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <PaymentActions payment={payment} />
+        </div>
       );
     },
   },

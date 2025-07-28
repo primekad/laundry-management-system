@@ -1,11 +1,26 @@
-import { db } from "@/lib/db";
-import { PaymentForm } from "../payment-form";
+import { PaymentFormSimple as PaymentForm } from '../payment-form-simple';
+import { getAvailableOrders } from '@/lib/data/payment-queries';
+import Breadcrumbs from '@/components/ui/breadcrumbs';
 
-export default async function Page() {
-  const orders = await db.order.findMany({
-    include: {
-      customer: true,
-    },
-  });
-  return <PaymentForm orders={orders} />;
+export default async function CreatePaymentPage() {
+  const orders = await getAvailableOrders();
+
+  return (
+    <main>
+      <Breadcrumbs
+        breadcrumbs={[
+          {
+            label: 'Payments',
+            href: '/payments',
+          },
+          {
+            label: 'Create Payment',
+            href: '/payments/create',
+            active: true,
+          },
+        ]}
+      />
+      <PaymentForm orders={orders} intent="create" />
+    </main>
+  );
 }
