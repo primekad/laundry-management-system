@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "better-auth.session_token",
+      "value": "mS3PIGEk4VZxCRU3eNYREAgrhyHn5M3f.j%2FE0DJFVgz6rwrpvYfIHZCprTjhEaSgQG%2BiqrSB7gy4%3D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "better-auth.dont_remember",
+      "value": "true.z%2Bu%2F0Ss4hH1VDG36wzpMk%2FeycFVnMVAhiKc%2FYd6tTSw%3D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}
