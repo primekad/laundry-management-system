@@ -39,7 +39,7 @@ export async function login(
 }
 
 export async function logout(): Promise<{ message?: string; error?: boolean; success?: boolean }> {
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+    const baseUrl = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
 
     try {
         const signOutResponse = await fetch(`${baseUrl}/api/auth/signout`, {
