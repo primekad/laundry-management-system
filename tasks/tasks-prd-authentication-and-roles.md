@@ -11,9 +11,9 @@
 - `app/components/ui/AccessDeniedPage.tsx` - Component for the "Access Denied" page.
 - `lib/auth/betterAuth.ts` - Configuration and adapter setup for Better Auth library.
 - `lib/auth/session.ts` - Functions for managing user sessions (e.g., getting current user, checking auth status).
-- `lib/auth/roles.ts` - Definitions and logic for role-based access control.
+- `lib/auth/roles.ts` - LoginDefinitions and logic for role-based access control.
 - `lib/prisma/schema.prisma` - Prisma schema definition, will need updates for User model (roles, branches, isActive flag).
-- `lib/actions/auth.ts` - Server actions for handling login, logout, password reset requests.
+- `lib/actions/auth-actions.ts` - Server actions for handling login, logout, password reset requests.
 - `lib/actions/users.ts` - Server actions for admin user management (CRUD operations).
 - `middleware.ts` - Next.js middleware for protecting routes based on authentication status and roles.
 - `tests/e2e/auth.spec.ts` - E2E tests for authentication flows (login, logout, role access).
@@ -27,41 +27,41 @@
 
 ## Tasks
 
-- [ ] 1.0 Setup Core Authentication Infrastructure
-  - [ ] 1.1 Integrate Better Auth library with Prisma Adapter for PostgreSQL.
-  - [ ] 1.2 Update Prisma schema (`schema.prisma`):
-    - [ ] 1.2.1 Add `Role` enum (STAFF, MANAGER, ADMIN).
-    - [ ] 1.2.2 Add `role` field to User model (default: STAFF).
-    - [ ] 1.2.3 Add `isActive` boolean field to User model (for soft deletes, default: true).
-    - [ ] 1.2.4 Add `defaultBranchId` to User model (linking to a Branch model - assuming Branch model exists or will be created).
-    - [ ] 1.2.5 Define relation for User to multiple `Branch` entities (for secondary branch assignments).
-  - [ ] 1.3 Generate Prisma client after schema changes (`npx prisma generate`).
-  - [ ] 1.4 Create initial database migration for User model changes (`npx prisma migrate dev --name auth_user_updates`).
-  - [ ] 1.5 Configure basic password strength rules using Better Auth defaults.
+- [x] 1.0 Setup Core Authentication Infrastructure
+  - [x] 1.1 Integrate Better Auth library with Prisma Adapter for PostgreSQL.
+  - [x] 1.2 Update Prisma schema (`schema.prisma`):
+    - [x] 1.2.1 Add `Role` enum (STAFF, MANAGER, ADMIN).
+    - [x] 1.2.2 Add `role` field to User model (default: STAFF).
+    - [x] 1.2.3 Add `isActive` boolean field to User model (for soft deletes, default: true).
+    - [x] 1.2.4 Add `defaultBranchId` to User model (linking to a Branch model - assuming Branch model exists or will be created).
+    - [x] 1.2.5 Define relation for User to multiple `Branch` entities (for secondary branch assignments).
+  - [x] 1.3 Generate Prisma client after schema changes (`npx prisma generate`).
+  - [x] 1.4 Create initial database migration for User model changes (`npx prisma migrate dev --name auth_user_updates`).
+  - [x] 1.5 Configure basic password strength rules using Better Auth defaults.
 - [ ] 2.0 Implement User Login and Session Management
-  - [ ] 2.1 Develop the Login Page UI (`app/auth/login/page.tsx`) based on the provided screenshot and code snippet.
-    - [ ] 2.1.1 Implement email and password input fields.
-    - [ ] 2.1.2 Implement "Remember me" checkbox functionality.
-    - [ ] 2.1.3 Implement "Forgot password?" link.
-  - [ ] 2.2 Create server action (`lib/actions/auth.ts`) for handling login form submission.
-    - [ ] 2.2.1 Validate credentials using Better Auth.
-    - [ ] 2.2.2 Create user session upon successful login.
-    - [ ] 2.2.3 Handle login errors and display appropriate messages on the Login Page.
-  - [ ] 2.3 Implement logout functionality (e.g., a logout button in the user profile/sidebar that calls a server action).
-  - [ ] 2.4 Implement password reset flow:
-    - [ ] 2.4.1 Create "Forgot Password" page (`app/auth/forgot-password/page.tsx`) to input email.
-    - [ ] 2.4.2 Server action to generate a secure, time-limited reset token and send a user-friendly email (content to be defined).
-    - [ ] 2.4.3 Create "Reset Password" page (`app/auth/reset-password/page.tsx`) for user to enter new password using token from email.
-    - [ ] 2.4.4 Server action to validate token and update user's password.
-  - [ ] 2.5 Write unit tests for Login Page component and auth server actions.
-- [ ] 3.0 Develop Role-Based Access Control (RBAC) and Branch Management
-  - [ ] 3.1 Implement Next.js middleware (`middleware.ts`) to protect routes based on authentication status and user roles.
-    - [ ] 3.1.1 Redirect unauthenticated users to the login page.
-    - [ ] 3.1.2 Prevent access to role-specific routes if user does not have the required role.
-  - [ ] 3.2 Create utility functions (`lib/auth/roles.ts` or in session management) to check user permissions based on their role.
-  - [ ] 3.3 Dynamically render UI elements (e.g., navigation links, buttons) based on user's role and permissions.
-  - [ ] 3.4 Implement branch switching functionality for Staff, Manager, and Admin users (e.g., dropdown in sidebar as per screenshot).
-    - [ ] 3.4.1 Store current active branch in user session or client-side state.
+  - [x] 2.1 Develop the Login Page UI (`app/auth/login/page.tsx`) based on the provided screenshot and code snippet.
+    - [x] 2.1.1 Implement email and password input fields.
+    - [x] 2.1.2 Implement "Remember me" checkbox functionality.
+    - [x] 2.1.3 Implement "Forgot password?" link.
+  - [x] 2.2 Create server action (`server-actions/auth-actions.ts`) for handling login form submission.
+    - [x] 2.2.1 Validate credentials using Better Auth.
+    - [x] 2.2.2 Create user session upon successful login.
+    - [x] 2.2.3 Handle login errors and display appropriate messages on the Login Page.
+  - [x] 2.3 Implement logout functionality (e.g., a logout button in the user profile/sidebar that calls a server action).
+  - [x] 2.4 Implement password reset flow:
+    - [x] 2.4.1 Create "Forgot Password" page (`app/auth/forgot-password/page.tsx`) to input email.
+    - [x] 2.4.2 Server action to generate a secure, time-limited reset token and send a user-friendly email (content to be defined).
+    - [x] 2.4.3 Create "Reset Password" page (`app/auth/reset-password/page.tsx`) for user to enter new password using token from email.
+    - [x] 2.4.4 Server action to validate token and update user's password.
+  - [x] 2.5 Write unit tests for Login Page component and auth server actions.
+- [ ] 3.0 Develop Role-Based Access Control (RBAC) ~~and~~ Branch Management
+  - [x] 3.1 Implement Next.js middleware (`middleware.ts`) to protect routes based on authentication status and user roles.
+    - [x] 3.1.1 Redirect unauthenticated users to the login page.
+    - [x] 3.1.2 Prevent access to role-specific routes if user does not have the required role.
+  - [x] 3.2 Create utility functions (`lib/auth/roles.ts` or in session management) to check user permissions based on their role.
+  - [x] 3.3 Dynamically render UI elements (e.g., navigation links, buttons) based on user's role and permissions.
+  - [x] 3.4 Implement branch switching functionality for Staff, Manager, and Admin users (e.g., dropdown in sidebar as per screenshot).
+    - [x] 3.4.1 Store current active branch in user session or client-side state.
     - [ ] 3.4.2 Ensure data displays (dashboards, reports, lists) and data entry are filtered/scoped to the active branch for Staff/Managers.
   - [ ] 3.5 Implement "All Branches" view for Admins:
     - [ ] 3.5.1 Allow Admins to select an "All Branches" context.

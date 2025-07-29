@@ -15,8 +15,19 @@ const serviceTypes = ["Wash", "Iron", "Dry Clean", "Fold", "Starch"]
 const itemTypes = ["Shirt", "Dress", "Trousers", "Bed Sheet", "Curtain", "Suit", "Blouse"]
 const paymentMethods = ["Cash", "Mobile Money", "Card", "Bank Transfer"]
 
+type OrderItem = {
+  id: number;
+  type: string;
+  services: string[];
+  quantity: number;
+  color: string;
+  label: string;
+  unitPrice: number;
+  total: number;
+};
+
 export default function OrderForm() {
-  const [items, setItems] = useState([
+  const [items, setItems] = useState<OrderItem[]>([
     { id: 1, type: "", services: [], quantity: 1, color: "", label: "", unitPrice: 0, total: 0 },
   ])
 

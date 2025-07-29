@@ -1,17 +1,32 @@
+import type {
+  Role,
+  PaymentMethod,
+  PaymentStatus,
+  OrderStatus,
+} from "@prisma/client";
+
 export interface User {
-  id: string
-  firstName: string
-  surname: string
-  email: string
-  phoneNumber?: string
-  role: UserRole
-  createdAt: string
-  lastLogin?: string
-  isActive: boolean
+  id: string;
+  firstName?: string | null;
+  surname?: string | null;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  image?: string | null;
+  phoneNumber?: string | null;
+  role: Role;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export type UserRole = "Admin" | "Manager" | "Staff" | "PublicUser"
-
+export interface Branch {
+  id: string;
+  name: string;
+  address: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 export interface Customer {
   id: string
   name: string
@@ -52,23 +67,37 @@ export interface OrderItem {
   totalPrice: number
 }
 
-export type PaymentStatus = "Unpaid" | "Partially Paid" | "Paid"
-export type OrderStatus = "Pending" | "Washing" | "Ironing" | "Ready" | "Delivered" | "Cancelled"
 
-export interface Expense {
-  id: string
-  date: string
-  title: string
-  category: ExpenseCategory
-  amount: number
-  paidTo?: string
-  linkedOrderId?: string
-  description?: string
-  recordedBy: string
-  createdAt: string
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  description?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export type ExpenseCategory = "Supplies" | "Utilities" | "Maintenance" | "Payroll" | "Marketing" | "Other"
+export interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  date: Date;
+  receiptUrl?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+
+  user: User;
+  userId: string;
+
+  category: ExpenseCategory;
+  categoryId: string;
+
+  branch: Branch;
+  branchId: string;
+
+  orderId?: string | null;
+  order?: Order | null;
+}
 
 export interface PriceRule {
   id: string
@@ -78,6 +107,18 @@ export interface PriceRule {
   isActive: boolean
   createdAt: string
   updatedAt: string
+}
+
+export interface Payment {
+  id: string;
+  orderId: string;
+  order: Order;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  transactionId: string | null;
+  status: PaymentStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DashboardStats {

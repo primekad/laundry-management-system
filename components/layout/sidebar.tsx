@@ -14,18 +14,22 @@ import {
   Plus,
   Users,
   CreditCard,
-  Receipt,
   BarChart3,
   Settings,
   ChevronLeft,
-  LogOut,
-  Zap,
+  Zap, Receipt,
 } from "lucide-react"
+import { LogoutButton } from "@/components/auth/logout-button"
+import { authClient } from "@/lib/auth-client";
+import { AuthGuard } from '@/components/auth/auth-guard';
+import { Permissions } from '@/lib/better-auth-helpers/types';
+import { BranchSwitcher } from '@/components/layout/branch-switcher';
 
 interface NavItem {
   name: string
   href: string
   icon: React.ElementType
+  permission?: Permissions
 }
 
 const mainNavItems: NavItem[] = [
@@ -41,7 +45,7 @@ const mainNavItems: NavItem[] = [
   },
   {
     name: "New Order",
-    href: "/orders/new",
+    href: "/orders/new-standardized",
     icon: Plus,
   },
   {
@@ -56,16 +60,19 @@ const financeNavItems: NavItem[] = [
     name: "Payments",
     href: "/payments",
     icon: CreditCard,
+    permission: { payment: ["list"] },
   },
   {
     name: "Expenses",
     href: "/expenses",
     icon: Receipt,
+    permission: { expense: ["list"] },
   },
   {
     name: "Reports",
     href: "/reports",
     icon: BarChart3,
+    permission: { report: ["view"] },
   },
 ]
 
@@ -74,12 +81,16 @@ const settingsNavItems: NavItem[] = [
     name: "Settings",
     href: "/settings",
     icon: Settings,
+    permission: { settings: ["update_pricing"] },
   },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const {data:session} = authClient.useSession()
+  
+
 
   return (
     <div
@@ -118,35 +129,37 @@ export function Sidebar() {
       {/* Navigation */}
       <ScrollArea className="flex-1 py-6">
         <div className="px-4 space-y-8">
+          <BranchSwitcher />
           <div className="space-y-2">
             <div className={cn("mb-4 px-3", collapsed ? "hidden" : "block")}>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Main Menu</h3>
             </div>
             <nav className="space-y-1">
               {mainNavItems.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = pathname === item.href;
                 return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
-                      isActive
-                        ? "bg-primary text-white shadow-lg shadow-primary/25"
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
-                      collapsed && "justify-center px-2",
-                    )}
-                  >
-                    <item.icon
+                  <AuthGuard key={item.href} permission={item.permission}>
+                    <Link
+                      href={item.href}
                       className={cn(
-                        "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
-                        isActive ? "text-white" : "text-slate-500 group-hover:text-slate-700",
-                        collapsed && "mr-0",
+                        "group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
+                        isActive
+                          ? "bg-primary text-white shadow-lg shadow-primary/25"
+                          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
+                        collapsed && "justify-center px-2",
                       )}
-                    />
-                    {!collapsed && <span>{item.name}</span>}
-                  </Link>
-                )
+                    >
+                      <item.icon
+                        className={cn(
+                          "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+                          isActive ? "text-white" : "text-slate-500 group-hover:text-slate-700",
+                          collapsed && "mr-0",
+                        )}
+                      />
+                      {!collapsed && <span>{item.name}</span>}
+                    </Link>
+                  </AuthGuard>
+                );
               })}
             </nav>
           </div>
@@ -157,62 +170,64 @@ export function Sidebar() {
             </div>
             <nav className="space-y-1">
               {financeNavItems.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = pathname === item.href;
                 return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
-                      isActive
-                        ? "bg-primary text-white shadow-lg shadow-primary/25"
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
-                      collapsed && "justify-center px-2",
-                    )}
-                  >
-                    <item.icon
+                  <AuthGuard key={item.href} permission={item.permission}>
+                    <Link
+                      href={item.href}
                       className={cn(
-                        "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
-                        isActive ? "text-white" : "text-slate-500 group-hover:text-slate-700",
-                        collapsed && "mr-0",
+                        "group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
+                        isActive
+                          ? "bg-primary text-white shadow-lg shadow-primary/25"
+                          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
+                        collapsed && "justify-center px-2",
                       )}
-                    />
-                    {!collapsed && <span>{item.name}</span>}
-                  </Link>
-                )
+                    >
+                      <item.icon
+                        className={cn(
+                          "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+                          isActive ? "text-white" : "text-slate-500 group-hover:text-slate-700",
+                          collapsed && "mr-0",
+                        )}
+                      />
+                      {!collapsed && <span>{item.name}</span>}
+                    </Link>
+                  </AuthGuard>
+                );
               })}
             </nav>
           </div>
 
           <div className="space-y-2">
             <div className={cn("mb-4 px-3", collapsed ? "hidden" : "block")}>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">System</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Settings</h3>
             </div>
             <nav className="space-y-1">
               {settingsNavItems.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = pathname === item.href;
                 return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
-                      isActive
-                        ? "bg-primary text-white shadow-lg shadow-primary/25"
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
-                      collapsed && "justify-center px-2",
-                    )}
-                  >
-                    <item.icon
+                  <AuthGuard key={item.href} permission={item.permission}>
+                    <Link
+                      href={item.href}
                       className={cn(
-                        "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
-                        isActive ? "text-white" : "text-slate-500 group-hover:text-slate-700",
-                        collapsed && "mr-0",
+                        "group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
+                        isActive
+                          ? "bg-primary text-white shadow-lg shadow-primary/25"
+                          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
+                        collapsed && "justify-center px-2",
                       )}
-                    />
-                    {!collapsed && <span>{item.name}</span>}
-                  </Link>
-                )
+                    >
+                      <item.icon
+                        className={cn(
+                          "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+                          isActive ? "text-white" : "text-slate-500 group-hover:text-slate-700",
+                          collapsed && "mr-0",
+                        )}
+                      />
+                      {!collapsed && <span>{item.name}</span>}
+                    </Link>
+                  </AuthGuard>
+                );
               })}
             </nav>
           </div>
@@ -231,20 +246,13 @@ export function Sidebar() {
             </Avatar>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-900 truncate">Kwasi Danso</p>
-                <p className="text-xs text-slate-500 truncate">Administrator</p>
+                <p className="text-sm font-bold text-slate-900 truncate">{session?.user?.name}</p>
+                <p className="text-xs text-slate-500 truncate">{session?.user?.role}</p>
               </div>
             )}
           </div>
           {!collapsed && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="sr-only">Log out</span>
-            </Button>
+            <LogoutButton className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg" />
           )}
         </div>
       </div>

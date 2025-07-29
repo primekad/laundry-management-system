@@ -1,0 +1,295 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  manager
+  staff
+}
+
+model User {
+  id            String    @id @default(cuid())
+  firstName     String?
+  surname       String?
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  phoneNumber   String?
+  role          Role      @default(staff)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  banned        Boolean?
+  banReason     String?
+  banExpires    DateTime?
+  sessions      Session[]
+  accounts      Account[]
+
+  // Custom relations for Laundry Management System
+  defaultBranchId  String?
+  defaultBranch    Branch?   @relation("DefaultBranchForUsers", fields: [defaultBranchId], references: [id])
+  assignedBranches Branch[]  @relation("AssignedUsersToBranches")
+  expenses         Expense[]
+
+  @@map("user")
+}
+
+model Session {
+  id             String   @id @default(cuid())
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+enum PricingType {
+  FLAT_RATE
+  SIZE_BASED
+  RANGE_BASED
+  PER_UNIT
+}
+
+enum UnitOfMeasurement {
+  YARDS
+  METRES
+  PIECES
+  KILOGRAMS
+}
+
+model ServiceType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pricingRules PricingRule[]
+  orderItems   OrderItem[]
+}
+
+model LaundryCategory {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  description  String?
+  pricingType  PricingType
+  status       String        @default("ACTIVE")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  pricingRules PricingRule[]
+  OrderItem    OrderItem[]
+}
+
+model PricingRule {
+  id                String             @id @default(cuid())
+  laundryCategory   LaundryCategory    @relation(fields: [laundryCategoryId], references: [id])
+  laundryCategoryId String
+  serviceType       ServiceType        @relation(fields: [serviceTypeId], references: [id])
+  serviceTypeId     String
+  price             Float?
+  sizeBasedRates    Json?
+  minPrice          Float?
+  maxPrice          Float?
+  unitOfMeasurement UnitOfMeasurement?
+  status            String             @default("ACTIVE")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation for users who have this branch as default
+  defaultBranchForUsers User[] @relation("DefaultBranchForUsers")
+
+  // Relation for users assigned to this branch (many-to-many)
+  assignedUsers User[] @relation("AssignedUsersToBranches")
+
+  // Relations for laundry system
+  orders          Order[]
+  expenses        Expense[]
+  invoiceSettings InvoiceSettings[]
+
+  @@map("branch")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  READY_FOR_PICKUP
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  branchId      String
+  branch        Branch        @relation(fields: [branchId], references: [id])
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  items         OrderItem[]
+  totalAmount   Float
+  amountPaid    Float         @default(0)
+  amountDue     Float
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  payments      Payment[]
+  expenses      Expense[]
+}
+
+model OrderItem {
+  id            String           @id @default(cuid())
+  orderId       String
+  order         Order            @relation(fields: [orderId], references: [id])
+  serviceTypeId String
+  serviceType   ServiceType      @relation(fields: [serviceTypeId], references: [id])
+  categoryId    String?
+  category      LaundryCategory? @relation(fields: [categoryId], references: [id])
+  quantity      Int
+  price         Float
+  subtotal      Float
+  notes         String?
+  size          String?
+}
+
+model InvoiceSettings {
+  id                 String   @id @default(cuid())
+  prefix             String   @default("INV")
+  separator          String   @default("-")
+  yearFormat         String   @default("YYYY") // YYYY or YY
+  includeMonth       Boolean  @default(false)
+  monthFormat        String   @default("MM") // MM or M
+  includeDay         Boolean  @default(false)
+  dayFormat          String   @default("DD") // DD or D
+  counterDigits      Int      @default(4) // Number of digits for the counter (e.g., 0001)
+  counterStart       Int      @default(1) // Starting number for the counter
+  currentCounter     Int      @default(1) // Current counter value
+  resetCounterYearly Boolean  @default(true) // Whether to reset counter at the start of the year
+  branchId           String? // Optional: can be branch-specific
+  branch             Branch?  @relation(fields: [branchId], references: [id])
+  isDefault          Boolean  @default(false) // Whether this is the default setting
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id])
+  amount        Float
+  paymentMethod PaymentMethod @default(CASH)
+  transactionId String?
+  status        PaymentStatus @default(PAID)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model ExpenseCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  expenses    Expense[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  description String
+  amount      Float
+  date        DateTime
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  categoryId String
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+}
+
+model Customer {
+  id      String  @id @default(cuid())
+  name    String
+  email   String  @unique
+  phone   String?
+  address String?
+  orders  Order[]
+}
