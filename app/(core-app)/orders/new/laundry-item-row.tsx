@@ -48,8 +48,7 @@ interface LaundryItemRowProps {
     total: number
   }
   categories: LaundryCategory[]
-  serviceTypes: ServiceType[] // For pricing rules compatibility
-  services: ServiceType[] // For order creation
+  services: ServiceType[]
   pricingRules: PricingRule[]
   onChangeField: (index: number, field: string, value: any) => void
   onRemove: () => void
@@ -59,7 +58,6 @@ export function LaundryItemRow({
   index,
   item,
   categories,
-  serviceTypes,
   services,
   pricingRules,
   onChangeField,

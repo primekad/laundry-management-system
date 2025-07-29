@@ -392,7 +392,6 @@ export function OrderFormStandardized({
                               index={index}
                               item={item}
                               categories={categories}
-                              serviceTypes={serviceTypes}
                               services={services}
                               pricingRules={pricingRules}
                               onChangeField={handleItemChange}

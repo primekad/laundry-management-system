@@ -36,7 +36,6 @@ import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover"
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import {Collapsible, CollapsibleContent, CollapsibleTrigger,} from "@/components/ui/collapsible";
 import {Label} from "@/components/ui/label";
-import {useBranch} from "@/components/providers/branch-provider";
 import {useToast} from "@/components/ui/use-toast";
 import {useRouter} from "next/navigation";
 import {EditOrderButton} from "@/components/edit-order-button";
@@ -266,7 +265,7 @@ export function OrdersClient({
 }: OrdersClientProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { branches } = useBranch();
+
   
   // Local state for form values
   const [searchValue, setSearchValue] = useState(search || "");
