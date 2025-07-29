@@ -110,10 +110,10 @@ export function PricingRuleDialog({
     const formData = new FormData();
     
     // Clear empty optional fields so they don't get sent to the server
-    const cleanedValues: Partial<typeof values> = {};
+    const cleanedValues: Record<string, any> = {};
     for (const [key, value] of Object.entries(values)) {
       if (value !== null && value !== undefined && value !== "") {
-        cleanedValues[key as keyof typeof values] = value;
+        cleanedValues[key] = value;
       }
     }
 

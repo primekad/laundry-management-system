@@ -20,8 +20,6 @@ export type BaseCustomer = {
   email: string;
   phone?: string | null;
   address?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
 };
 
 export type CreateCustomerData = {
@@ -48,7 +46,6 @@ export type CustomerListItem = {
   email: string;
   phone?: string | null;
   address?: string | null;
-  createdAt: Date;
   _count: {
     orders: number;
   };

@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import { DataTable } from "@/components/ui/data-table";
-import { Payment, columns } from "./columns";
+import { columns } from "./columns";
+import type { PaymentListItem } from "./types";
 
 interface PaymentsDataTableProps {
-  data: Payment[];
+  data: PaymentListItem[];
 }
 
 export function PaymentsDataTable({ data }: PaymentsDataTableProps) {

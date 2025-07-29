@@ -22,7 +22,7 @@ export async function requestPasswordReset(
 
   const { email } = validatedFields.data;
   try {
-    await requestPasswordResetHelper(email, "/reset-password");
+    await requestPasswordResetHelper(email, "fgp");
     return createSuccessResponse();
   } catch (error) {
     console.log(error);

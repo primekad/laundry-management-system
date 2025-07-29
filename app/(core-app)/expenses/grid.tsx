@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { ExpenseDataTable } from './expense-data-table';
 import { columns } from './columns';
-import { Expense } from '@/lib/types';
+import { ExpenseListItem } from './types';
 
 interface ExpensesGridProps {
-  initialData: Expense[];
+  initialData: ExpenseListItem[];
 }
 
 export function ExpensesGrid({ initialData }: ExpensesGridProps) {

@@ -11,8 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ExpenseActions } from '../buttons';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
 
-export default async function ExpenseDetailsPage({ params }: { params: { id: string } }) {
-  const expense = await getExpenseById(params.id);
+export default async function ExpenseDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const expense = await getExpenseById(id);
 
   if (!expense) {
     notFound();

@@ -12,19 +12,19 @@ export type LoginState = {
 };
 
 export interface ResetPasswordState {
-    message: string | null
-    errors: {
+    message?: string | null
+    errors?: {
         password?: string[]
         passwordConfirmation?: string[]
         token?: string[]
     }
-    success: boolean
+    success?: boolean
 }
 
 export interface RequestPasswordResetState {
-    message: string | null
-    errors: {
+    message?: string | null
+    errors?: {
         email?: string[]
     }
-    success: boolean
+    success?: boolean
 }

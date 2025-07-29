@@ -3,8 +3,8 @@ import { BranchForm } from '@/app/(core-app)/admin/branches/branch-form';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
 import { notFound } from 'next/navigation';
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const id = params.id;
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const branch = await fetchBranchById(id);
 
   if (!branch) {

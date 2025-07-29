@@ -11,9 +11,9 @@ import {
   createSuccessResponse,
   createActionResult,
   extractFormFields,
-  PaymentMethod,
-  PaymentStatus,
+
 } from './payment-action-helpers';
+import { PaymentMethod, PaymentStatus } from '@prisma/client';
 
 describe('Payment Action Helpers', () => {
   describe('Validation Schemas', () => {

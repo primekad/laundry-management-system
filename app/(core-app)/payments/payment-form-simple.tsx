@@ -4,6 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { createPayment, updatePayment } from './actions';
 import { CreatePaymentSchema, UpdatePaymentSchema, PaymentMethod, PaymentStatus } from './payment-action-helpers';
+
+// Define enum values as arrays for iteration
+const PAYMENT_METHODS = Object.values(PaymentMethod) as PaymentMethod[];
+const PAYMENT_STATUSES = Object.values(PaymentStatus) as PaymentStatus[];
 import { Button } from '@/components/ui/button';
 import type { PaymentWithOrder } from './types';
 import Link from 'next/link';
@@ -151,7 +155,7 @@ export function PaymentFormSimple({ payment, orders, intent }: PaymentFormProps)
                 <SelectValue placeholder="Select payment method" />
               </SelectTrigger>
               <SelectContent>
-                {Object.values(PaymentMethod).map((method) => (
+                {PAYMENT_METHODS.map((method) => (
                   <SelectItem key={method} value={method}>
                     {method.replace('_', ' ')}
                   </SelectItem>
@@ -188,7 +192,7 @@ export function PaymentFormSimple({ payment, orders, intent }: PaymentFormProps)
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.values(PaymentStatus).map((status) => (
+                  {PAYMENT_STATUSES.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}
                     </SelectItem>

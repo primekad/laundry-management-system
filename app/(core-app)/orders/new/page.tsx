@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { useQueryClient } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
-import { Customer, LaundryCategory, ServiceType, Service } from "@prisma/client"
+import { Customer, LaundryCategory, ServiceType } from "@prisma/client"
 import { z } from "zod"
 import { useBranch } from "@/components/providers/branch-provider"
 import { Button } from "@/components/ui/button"
@@ -389,8 +389,7 @@ export default function NewOrderPage() {
                                   index={index}
                                   item={item}
                                   categories={categories || []}
-                                  serviceTypes={(serviceTypes || []) as any}
-                                  services={(services || []) as any}
+                                  services={(serviceTypes || []) as any}
                                   pricingRules={pricingRules as any || []}
                                   onChangeField={handleItemChange}
                                   onRemove={() => removeItem(item.id)}

@@ -21,11 +21,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Expense } from "@/lib/types";
+import { ExpenseListItem } from "./types";
 
 interface ExpenseDataTableProps {
-  columns: ColumnDef<Expense>[];
-  data: Expense[];
+  columns: ColumnDef<ExpenseListItem>[];
+  data: ExpenseListItem[];
   columnFilters: ColumnFiltersState;
   setColumnFilters: React.Dispatch<React.SetStateAction<ColumnFiltersState>>;
 }

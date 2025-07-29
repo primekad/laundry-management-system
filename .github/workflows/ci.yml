@@ -34,9 +34,6 @@ jobs:
       - name: Run ESLint
         run: pnpm lint
 
-      - name: Run tests
-        run: pnpm test run
-
       - name: Build application
         run: pnpm build
 

@@ -11,10 +11,10 @@ export async function getCurrentUser() {
   
   try {
     const session = await auth.api.getSession({
-      headers: {
+      headers: new Headers({
         cookie: cookieStore.toString(),
         ...Object.fromEntries(headersList.entries())
-      },
+      }),
     });
     
     return session;

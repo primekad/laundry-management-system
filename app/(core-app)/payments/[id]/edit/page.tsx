@@ -3,9 +3,10 @@ import { getPaymentById, getAvailableOrders } from '@/lib/data/payment-queries';
 import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
 
-export default async function EditPaymentPage({ params }: { params: { id: string } }) {
+export default async function EditPaymentPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const [payment, orders] = await Promise.all([
-    getPaymentById(params.id),
+    getPaymentById(id),
     getAvailableOrders(),
   ]);
 

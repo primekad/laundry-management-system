@@ -65,7 +65,7 @@ const getStatusBadge = (status: string) => {
 }
 
 export default function DashboardPage() {
-  const { activeBranch, isAllBranches, isLoading:isBranchLoading, setActiveBranch } = useBranch();
+  const { activeBranch, isAllBranches, setActiveBranch } = useBranch();
   
   // Use either the branch ID or null for "all branches" option
   const branchId = isAllBranches ? "all" : (activeBranch?.id || null);
@@ -73,26 +73,26 @@ export default function DashboardPage() {
   // Fetch dashboard data using TanStack Query
   const { data: stats, isLoading: isLoadingStats } = useQuery({
     queryKey: ['dashboardStats', branchId],
-    queryFn: () => {console.log(`branchId is ${activeBranch?.id} when isBranchLoading is ${isBranchLoading}`); return fetchDashboardStats(branchId)},
-    enabled: !isBranchLoading,
+    queryFn: () => fetchDashboardStats(branchId),
+    enabled: !!activeBranch,
   });
 
   const { data: chartData, isLoading: isLoadingChart } = useQuery({
     queryKey: ['revenueChart', branchId],
     queryFn: () => fetchRevenueChartData(branchId),
-    enabled: !isBranchLoading,
+    enabled: !!activeBranch,
   });
 
   const { data: recentOrders, isLoading: isLoadingOrders } = useQuery({
     queryKey: ['recentOrders', branchId],
     queryFn: () => fetchRecentOrders(branchId),
-    enabled: !isBranchLoading,
+    enabled: !!activeBranch,
   });
   
   const { data: orderStatusData, isLoading: isLoadingOrderStatus } = useQuery({
     queryKey: ['orderStatusDistribution', branchId],
     queryFn: () => fetchOrderStatusDistribution(branchId),
-    enabled: !isBranchLoading,
+    enabled: !!activeBranch,
   });
 
   // Loading state

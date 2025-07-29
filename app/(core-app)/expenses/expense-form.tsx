@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createExpense, updateExpense } from "./actions";
+import { createExpense, updateExpense } from "@/lib/data/expense-commands";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Branch, Expense, ExpenseCategory, User as UserType } from "@/lib/types";
@@ -70,9 +70,15 @@ export function ExpenseForm({
   });
 
   async function onSubmit(data: z.infer<typeof ExpenseFormSchema>) {
+    // Convert null to undefined for orderId
+    const cleanedData = {
+      ...data,
+      orderId: data.orderId || undefined,
+    };
+
     const action = expense
-      ? updateExpense(expense.id, data)
-      : createExpense(data);
+      ? updateExpense(expense.id, cleanedData)
+      : createExpense(cleanedData);
 
     toast.promise(action, {
       loading: expense ? "Updating expense..." : "Creating expense...",

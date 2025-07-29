@@ -1,4 +1,4 @@
-import { PaymentMethod, PaymentStatus } from './payment-action-helpers';
+import { PaymentMethod, PaymentStatus } from '@prisma/client';
 
 export type Payment = {
   id: string;

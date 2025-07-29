@@ -8,11 +8,7 @@ export async function fetchUserById(id: string) {
       where: { id },
       include: {
         defaultBranch: true,
-        assignedBranches: {
-          include: {
-            branch: true,
-          },
-        },
+        assignedBranches: true,
       },
     });
 
@@ -20,10 +16,7 @@ export async function fetchUserById(id: string) {
       return null;
     }
 
-    return {
-      ...userData,
-      assignedBranches: userData.assignedBranches.map((uob) => uob.branch),
-    };
+    return userData;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch user.');

@@ -5,7 +5,7 @@ import { UserDataTable } from './user-data-table';
 import { columns } from './columns';
 
 export default async function UsersTable() {
-  const users = await fetchUsers();
+  const result = await fetchUsers();
 
-  return <UserDataTable columns={columns} data={users} />;
+  return <UserDataTable columns={columns} data={result.users} />;
 }

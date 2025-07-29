@@ -1,3 +1,8 @@
+import { db } from '@/lib/db';
+import { createCustomer } from '@/app/(core-app)/customers/actions';
+import { PaymentMethod, PaymentStatus } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
+
 /**
  * Update an existing order - Fixed version that handles payment-only updates
  */
@@ -63,9 +68,9 @@ export async function updateOrder(id: string, data: any) {
     const paymentStatus = amountDue <= 0 ? 'PAID' : amountDue < totalAmount ? 'PARTIAL' : 'PENDING'
     
     // Create transaction for multiple database operations
-    const order = await db.$transaction(async (prisma) => {
+    const order = await db.$transaction(async (tx) => {
       // 1. Update the order
-      const updatedOrder = await prisma.order.update({
+      const updatedOrder = await tx.order.update({
         where: { id },
         data: {
           customerId: customer?.id || existingOrder.customerId,
@@ -82,12 +87,12 @@ export async function updateOrder(id: string, data: any) {
       // 2. Only modify order items if this is not a payment-only update
       if (!isPaymentOnly && data.items && Array.isArray(data.items)) {
         // Delete existing order items
-        await prisma.orderItem.deleteMany({
+        await tx.orderItem.deleteMany({
           where: { orderId: id },
         })
         
         // Create new order items
-        await prisma.orderItem.createMany({
+        await tx.orderItem.createMany({
           data: data.items.map((item: any) => ({
             orderId: id,
             serviceTypeId: item.serviceTypeId,
@@ -103,7 +108,7 @@ export async function updateOrder(id: string, data: any) {
       
       // 3. Create new payment if amount is greater than 0
       if (newPaymentAmount > 0 && paymentMethod) {
-        await prisma.payment.create({
+        await tx.payment.create({
           data: {
             orderId: id,
             amount: newPaymentAmount,

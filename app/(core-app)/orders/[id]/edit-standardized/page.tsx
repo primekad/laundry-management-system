@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface EditOrderStandardizedPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 async function EditOrderFormData({ orderId }: { orderId: string }) {
@@ -117,10 +117,11 @@ function EditOrderFormSkeleton() {
   );
 }
 
-export default function EditOrderStandardizedPage({ params }: EditOrderStandardizedPageProps) {
+export default async function EditOrderStandardizedPage({ params }: EditOrderStandardizedPageProps) {
+  const { id } = await params;
   return (
     <Suspense fallback={<EditOrderFormSkeleton />}>
-      <EditOrderFormData orderId={params.id} />
+      <EditOrderFormData orderId={id} />
     </Suspense>
   );
 }

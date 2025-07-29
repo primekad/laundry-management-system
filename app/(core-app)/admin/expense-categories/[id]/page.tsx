@@ -1,8 +1,9 @@
 import {getExpenseCategoryById} from "../actions";
 
 
-export default async function EditCategoryPage({ params }: { params: { id: string } }) {
-  const category = await getExpenseCategoryById(params.id);
+export default async function EditCategoryPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const category = await getExpenseCategoryById(id);
 
   if (!category) {
     return <div>Category not found</div>;

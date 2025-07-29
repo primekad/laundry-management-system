@@ -9,11 +9,7 @@ export async function getCustomerById(customerId: string): Promise<CustomerWithR
     const customer = await db.customer.findUnique({
       where: { id: customerId },
       include: {
-        orders: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
+        orders: true,
       },
     });
 
@@ -40,7 +36,7 @@ export async function getAllCustomers(): Promise<CustomerListItem[]> {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        name: 'asc',
       },
     });
 
@@ -50,7 +46,7 @@ export async function getAllCustomers(): Promise<CustomerListItem[]> {
       email: customer.email,
       phone: customer.phone,
       address: customer.address,
-      createdAt: customer.createdAt,
+
       _count: {
         orders: customer._count.orders,
       },
@@ -91,7 +87,7 @@ export async function searchCustomers(searchTerm: string): Promise<CustomerListI
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        name: 'asc',
       },
     });
 
@@ -101,7 +97,7 @@ export async function searchCustomers(searchTerm: string): Promise<CustomerListI
       email: customer.email,
       phone: customer.phone,
       address: customer.address,
-      createdAt: customer.createdAt,
+
       _count: {
         orders: customer._count.orders,
       },
@@ -150,13 +146,7 @@ export async function getCustomerStats() {
           },
         },
       }),
-      db.customer.count({
-        where: {
-          createdAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-          },
-        },
-      }),
+      db.customer.count(),
     ]);
 
     return {

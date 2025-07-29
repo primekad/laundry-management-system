@@ -9,9 +9,10 @@ import {
 import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
 
-export default async function EditExpensePage({ params }: { params: { id: string } }) {
+export default async function EditExpensePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const [expense, categories, branches, users, orders] = await Promise.all([
-    getExpenseById(params.id),
+    getExpenseById(id),
     getExpenseCategories(),
     getBranches(),
     getUsers(),

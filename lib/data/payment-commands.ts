@@ -110,10 +110,10 @@ export async function cancelPayment(paymentId: string): Promise<PaymentWithOrder
       throw new Error('Payment not found');
     }
 
-    // Update status to FAILED
+    // Update status to PENDING (closest to cancelled)
     await db.payment.update({
       where: { id: paymentId },
-      data: { status: 'FAILED' },
+      data: { status: 'PENDING' },
     });
 
     // Return the updated payment

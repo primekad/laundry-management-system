@@ -1,19 +1,8 @@
 import { z } from 'zod';
+import { PaymentMethod, PaymentStatus } from '@prisma/client';
 
-// Enums matching Prisma schema
-export enum PaymentMethod {
-  CASH = 'CASH',
-  CARD = 'CARD',
-  BANK_TRANSFER = 'BANK_TRANSFER',
-  MOBILE_MONEY = 'MOBILE_MONEY'
-}
-
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED'
-}
+// Re-export enums for use in other files
+export { PaymentMethod, PaymentStatus };
 
 // Enhanced validation schemas
 export const CreatePaymentSchema = z.object({

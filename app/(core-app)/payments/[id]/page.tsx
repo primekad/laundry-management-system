@@ -11,8 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PaymentActions } from '../buttons';
 import Breadcrumbs from '@/components/ui/breadcrumbs';
 
-export default async function PaymentDetailsPage({ params }: { params: { id: string } }) {
-  const payment = await getPaymentById(params.id);
+export default async function PaymentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const payment = await getPaymentById(id);
 
   if (!payment) {
     notFound();

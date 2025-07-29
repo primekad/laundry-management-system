@@ -114,7 +114,7 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
   }
 }
 
-export async function createCustomer(data: Omit<Customer, "id" | "totalOrders" | "totalSpent" | "amountPaid" | "amountToPay">): Promise<Customer> {
+export async function createCustomer(data: Omit<Customer, "id" | "totalOrders" | "totalSpent" | "amountPaid" | "amountToPay" | "createdAt" | "updatedAt">): Promise<Customer> {
   try {
     // Create customer in the database
     const customer = await db.customer.create({
