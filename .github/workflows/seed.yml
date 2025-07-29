@@ -1,0 +1,59 @@
+name: Database Seeding
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to seed'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+      force:
+        description: 'Force seed (will reset existing data)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Reset database (if force is true)
+        if: ${{ github.event.inputs.force == 'true' }}
+        run: pnpm db:reset
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Run database migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Seed database
+        run: pnpm db:seed
+        env:
+          DATABASE_URL: ${{ secrets.DIRECT_URL }}

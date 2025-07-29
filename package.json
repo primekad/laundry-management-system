@@ -11,7 +11,18 @@
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:watch": "vitest",
-    "setup:admin": "tsx scripts/create-admin.ts"
+    "setup:admin": "tsx scripts/create-admin.ts",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:reset": "prisma migrate reset --force",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:setup": "tsx scripts/db-management.ts setup",
+    "db:ci": "tsx scripts/db-management.ts ci",
+    "db:status": "tsx scripts/db-management.ts status",
+    "db:check": "tsx scripts/check-migrations.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
