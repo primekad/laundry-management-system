@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -187,24 +188,24 @@ enum PaymentMethod {
 }
 
 model Order {
-  id                   String        @id @default(cuid())
-  invoiceNumber        String        @unique
+  id                   String               @id @default(cuid())
+  invoiceNumber        String               @unique
   branchId             String
-  branch               Branch        @relation(fields: [branchId], references: [id])
+  branch               Branch               @relation(fields: [branchId], references: [id])
   customerId           String
-  customer             Customer      @relation(fields: [customerId], references: [id])
+  customer             Customer             @relation(fields: [customerId], references: [id])
   items                OrderItem[]
   totalAmount          Float
-  amountPaid           Float         @default(0)
+  amountPaid           Float                @default(0)
   amountDue            Float
-  discount             Float         @default(0)
-  status               OrderStatus   @default(PENDING)
-  paymentStatus        PaymentStatus @default(PENDING)
+  discount             Float                @default(0)
+  status               OrderStatus          @default(PENDING)
+  paymentStatus        PaymentStatus        @default(PENDING)
   notes                String?
   orderDate            DateTime?
   expectedDeliveryDate DateTime?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
   payments             Payment[]
   expenses             Expense[]
   statusHistory        OrderStatusHistory[]
