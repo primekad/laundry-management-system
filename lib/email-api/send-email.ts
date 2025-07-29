@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { getEmailLogDatabase } from './email-log-db';
 
 // Initialize Resend with API key from environment
-const resend = new Resend(process.env.RESEND_API_KEY || 're_Nh5nFWUd_AL4gykhHq8DfZmcG8K6QQ6jB');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 type EmailRequest = {
     to: string;
