@@ -40,9 +40,14 @@ jobs:
       - name: Run database migrations
         run: pnpm db:migrate
         env:
-          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          SEND_ACTUAL_EMAIL: ${{ vars.SEND_ACTUAL_EMAIL }}
 
       - name: Verify migration status
         run: npx prisma migrate status
         env:
-          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}

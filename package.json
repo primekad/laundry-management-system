@@ -22,7 +22,8 @@
     "db:setup": "tsx scripts/db-management.ts setup",
     "db:ci": "tsx scripts/db-management.ts ci",
     "db:status": "tsx scripts/db-management.ts status",
-    "db:check": "tsx scripts/check-migrations.ts"
+    "db:check": "tsx scripts/check-migrations.ts",
+    "env:check": "tsx scripts/verify-env.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

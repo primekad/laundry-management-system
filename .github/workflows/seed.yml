@@ -46,14 +46,26 @@ jobs:
         if: ${{ github.event.inputs.force == 'true' }}
         run: pnpm db:reset
         env:
-          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          SEND_ACTUAL_EMAIL: ${{ vars.SEND_ACTUAL_EMAIL }}
 
       - name: Run database migrations
         run: pnpm db:migrate
         env:
-          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          SEND_ACTUAL_EMAIL: ${{ vars.SEND_ACTUAL_EMAIL }}
 
       - name: Seed database
         run: pnpm db:seed
         env:
-          DATABASE_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          SEND_ACTUAL_EMAIL: ${{ vars.SEND_ACTUAL_EMAIL }}

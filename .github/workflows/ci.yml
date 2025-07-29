@@ -28,8 +28,18 @@ jobs:
           - 5432:5432
 
     env:
+      # CI uses temporary PostgreSQL service
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      DATABASE_PROVIDER: ${{ vars.DATABASE_PROVIDER }}
+      DIRECT_URL:  ${{ secrets.DIRECT_URL }}
+      # Authentication for CI
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+      # Email configuration from repository variables
+      EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+      SEND_ACTUAL_EMAIL: ${{ vars.SEND_ACTUAL_EMAIL }}
+      # Use test API key or disable email for CI
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 'test-key' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -55,6 +65,9 @@ jobs:
 
       - name: Run ESLint
         run: pnpm lint
+
+      - name: Run tests
+        run: pnpm test
 
       - name: Build application
         run: pnpm build
