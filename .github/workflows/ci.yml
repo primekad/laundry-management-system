@@ -27,11 +27,6 @@ jobs:
         ports:
           - 5432:5432
 
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-      NEXTAUTH_SECRET: test-secret-for-ci
-      NEXTAUTH_URL: http://localhost:3000
-
     steps:
       - uses: actions/checkout@v4
 
