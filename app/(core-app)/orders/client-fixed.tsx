@@ -1,77 +1,47 @@
 'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { format } from "date-fns";
+import {useState} from "react";
+import {format} from "date-fns";
 import {
   ColumnDef,
+  flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
   SortingState,
-  ColumnFiltersState,
-  getFilteredRowModel,
-  flexRender,
+  useReactTable,
 } from "@tanstack/react-table";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Card, CardContent, CardFooter} from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardFooter 
-} from "@/components/ui/card";
-import { 
-  AlertTriangle,
   CalendarIcon,
-  ChevronLeft, 
-  ChevronRight, 
-  Filter, 
-  MoreHorizontal,
-  Plus, 
-  Search,
-  Eye,
-  Edit,
-  Printer,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Filter,
+  MoreHorizontal,
+  Printer,
+  Search,
   Settings,
 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Label } from "@/components/ui/label";
-import { useBranch } from "@/components/providers/branch-provider";
-import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {Badge} from "@/components/ui/badge";
+import {EditOrderButton} from "@/components/edit-order-button";
+import {cn} from "@/lib/utils";
+import {Calendar} from "@/components/ui/calendar";
+import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger,} from "@/components/ui/collapsible";
+import {Label} from "@/components/ui/label";
+import {useBranch} from "@/components/providers/branch-provider";
+import {useToast} from "@/components/ui/use-toast";
+import {useRouter} from "next/navigation";
 // Import types from proper location
-import { OrderStatus, PaymentStatus } from "@/types";
+import {OrderStatus, PaymentStatus} from "@prisma/client";
 
 // Status and payment labels mapping
 const orderStatusLabels: Record<string, string> = {
@@ -171,8 +141,24 @@ function OrderActionMenu({ order }: { order: Order }) {
         <DropdownMenuItem onClick={() => router.push(`/orders/${order.id}`)}>
           <Eye className="mr-2 h-4 w-4" /> View Details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push(`/orders/${order.id}/edit`)}>
-          <Edit className="mr-2 h-4 w-4" /> Edit Order
+        <DropdownMenuItem onSelect={(e) => {
+          e.preventDefault();
+        }}>
+          <div className="flex items-center w-full">
+            <EditOrderButton
+              order={{
+                id: order.id,
+                status: order.status,
+                notes: order.notes || null,
+                expectedDeliveryDate: order.expectedDeliveryDate ? order.expectedDeliveryDate.toISOString().split('T')[0] : null,
+                orderDate: order.orderDate ? order.orderDate.toISOString().split('T')[0] : null
+              }}
+              variant="ghost"
+              iconOnly={false}
+              size="sm"
+              className="w-full justify-start p-0 h-auto"
+            />
+          </div>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push(`/orders/${order.id}/invoice`)}>
           <Printer className="mr-2 h-4 w-4" /> Print Invoice
@@ -225,24 +211,35 @@ type Order = {
   invoiceNumber: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
-  amount: number;
+  amount?: number; // Optional for backward compatibility
+  totalAmount?: number; // Primary amount field from database
   createdAt: Date;
-  expectedDeliveryDate?: Date;
+  expectedDeliveryDate?: Date | null; // Match database type
+  orderDate?: Date | null; // Match database type
+  notes?: string | null; // Add notes property
   customer?: {
     name: string;
-    phone: string;
+    phone: string | null;
+    email: string;
+    address: string | null;
+    id: string;
   };
   branch?: {
     id: string;
     name: string;
+    phone: string | null;
+    address: string | null;
+    createdAt: Date;
+    updatedAt: Date;
   };
   payments?: {
     id: string;
     amount: number;
     date: Date;
   }[];
-  totalAmount?: number; // Added for table display
+  items?: any[]; // Match database type
   amountDue?: number; // Added for amount pending calculation
+  amountPaid?: number; // Added for amount paid calculation
 };
 
 type OrdersClientProps = {
@@ -277,7 +274,7 @@ export function OrdersClient({
 }: OrdersClientProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { branches } = useBranch();
+  const { userBranches } = useBranch();
   
   // Local state for form values
   const [searchValue, setSearchValue] = useState(search || "");
@@ -338,10 +335,10 @@ export function OrdersClient({
       cell: ({ row }) => <PaymentBadge status={row.original.paymentStatus} />,
     },
     {
-      accessorKey: "createdAt",
+      accessorKey: "orderDate",
       header: "Order Date",
       enableSorting: true,
-      cell: ({ row }) => formatDate(row.original.createdAt),
+      cell: ({ row }) => formatDate(row.original.orderDate),
     },
     {
       accessorKey: "expectedDeliveryDate",
@@ -379,9 +376,9 @@ export function OrdersClient({
         let pendingAmount = totalAmount;
         
         // Use the actual payment status from database and backend calculated amount due
-        if (row.original.paymentStatus === PaymentStatus.PAID) {
+        if (row.original.paymentStatus === "PAID") {
           pendingAmount = 0;
-        } else if (row.original.paymentStatus === PaymentStatus.PARTIAL) {
+        } else if (row.original.paymentStatus === "PARTIAL") {
           // Use the backend amount due if available, otherwise fall back to simple calculation
           pendingAmount = row.original.amountDue || totalAmount * 0.5;
         }
@@ -450,7 +447,7 @@ export function OrdersClient({
         duration: 5000,
       });
     }
-    router.push("/orders/new");
+    router.push("/orders/new-standardized");
   };
 
   return (

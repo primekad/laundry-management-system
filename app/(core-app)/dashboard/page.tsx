@@ -130,7 +130,7 @@ export default function DashboardPage() {
             Export Data
           </Button>
           <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-lg" asChild>
-            <Link href="/orders/new">
+            <Link href="/orders/new-standardized">
               <ShoppingBag className="h-4 w-4 mr-2" />
               New Order
             </Link>

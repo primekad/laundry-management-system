@@ -187,23 +187,27 @@ enum PaymentMethod {
 }
 
 model Order {
-  id            String        @id @default(cuid())
-  invoiceNumber String        @unique
-  branchId      String
-  branch        Branch        @relation(fields: [branchId], references: [id])
-  customerId    String
-  customer      Customer      @relation(fields: [customerId], references: [id])
-  items         OrderItem[]
-  totalAmount   Float
-  amountPaid    Float         @default(0)
-  amountDue     Float
-  status        OrderStatus   @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-  notes         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  payments      Payment[]
-  expenses      Expense[]
+  id                   String        @id @default(cuid())
+  invoiceNumber        String        @unique
+  branchId             String
+  branch               Branch        @relation(fields: [branchId], references: [id])
+  customerId           String
+  customer             Customer      @relation(fields: [customerId], references: [id])
+  items                OrderItem[]
+  totalAmount          Float
+  amountPaid           Float         @default(0)
+  amountDue            Float
+  discount             Float         @default(0)
+  status               OrderStatus   @default(PENDING)
+  paymentStatus        PaymentStatus @default(PENDING)
+  notes                String?
+  orderDate            DateTime?
+  expectedDeliveryDate DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  payments             Payment[]
+  expenses             Expense[]
+  statusHistory        OrderStatusHistory[]
 }
 
 model OrderItem {
@@ -291,4 +295,16 @@ model Customer {
   phone   String?
   address String?
   orders  Order[]
+}
+
+model OrderStatusHistory {
+  id             String      @id @default(cuid())
+  orderId        String
+  order          Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  previousStatus OrderStatus
+  newStatus      OrderStatus
+  changedAt      DateTime    @default(now())
+
+  @@index([orderId])
+  @@index([changedAt])
 }

@@ -45,7 +45,7 @@ const mainNavItems: NavItem[] = [
   },
   {
     name: "New Order",
-    href: "/orders/new",
+    href: "/orders/new-standardized",
     icon: Plus,
   },
   {

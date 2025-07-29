@@ -13,6 +13,7 @@ interface EditOrderButtonProps {
     status: OrderStatus;
     notes?: string | null;
     expectedDeliveryDate?: string | null;
+    orderDate?: string | null;
   };
   variant?: 'default' | 'outline' | 'destructive' | 'ghost' | 'link' | 'secondary';
   iconOnly?: boolean;

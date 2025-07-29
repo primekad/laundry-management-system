@@ -86,6 +86,10 @@ export function EditOrderDialog({
 
       toast.success('Order updated successfully');
       onOpenChange(false);
+
+      // Dispatch custom event to refresh status history
+      window.dispatchEvent(new CustomEvent('orderUpdated'));
+
       if (onEditSuccess) {
         onEditSuccess();
       } else {

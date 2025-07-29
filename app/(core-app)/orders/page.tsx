@@ -3,10 +3,9 @@ import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { getOrders } from "./actions"
-import { OrdersClient } from "./client"
+import { OrdersClient } from "./client-fixed"
 import { getCurrentUser } from "@/lib/auth-server"
 
-import { type Order } from "./types";
 
 // Server component to fetch data on the server
 export default async function OrdersPage({
@@ -84,7 +83,7 @@ export default async function OrdersPage({
           <p className="text-sm text-slate-600">Manage customer laundry orders</p>
         </div>
         <Button asChild>
-          <Link href="/orders/new" className="gap-1">
+          <Link href="/orders/new-standardized" className="gap-1">
             <Plus className="h-4 w-4" />
             New Order
           </Link>
@@ -92,12 +91,17 @@ export default async function OrdersPage({
       </div>
       
       {/* Client component handles all UI rendering with TanStack React Table */}
-      <OrdersClient 
-        orders={orders} 
-        meta={meta} 
-        status={status} 
-        payment={payment} 
+      <OrdersClient
+        orders={orders}
+        meta={meta}
+        status={status}
+        payment={payment}
         search={search}
+        branchId={branchId}
+        orderDateFrom={orderDateFrom}
+        orderDateTo={orderDateTo}
+        expectedDateFrom={expectedDateFrom}
+        expectedDateTo={expectedDateTo}
       />
     </div>
   )

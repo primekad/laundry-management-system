@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -73,10 +73,14 @@ const paymentMethodOptions = [
   { value: "BANK_TRANSFER", label: "Bank Transfer" },
 ];
 
-export default function EditOrderPage({ params }: { params: { id: string } }) {
+export default function EditOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const action = searchParams.get("action");
+
+  // Unwrap the params Promise
+  const resolvedParams = use(params);
+  const orderId = resolvedParams.id;
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -107,9 +111,9 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     async function loadOrder() {
       try {
-        const orderData = await getOrderById(params.id);
+        const orderData = await getOrderById(orderId);
         setOrder(orderData);
-        
+
         // Set default form values from order data
         orderForm.reset({
           status: orderData.status,
@@ -141,7 +145,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
     if (action === "payment") {
       setPaymentDialogOpen(true);
     }
-  }, [params.id, router, orderForm, paymentForm, action]);
+  }, [orderId, router, orderForm, paymentForm, action]);
 
   // Handle order update submission
   async function handleOrderUpdate(data: z.infer<typeof orderUpdateSchema>) {
@@ -155,7 +159,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
         // Include any other fields that need to be updated
       };
 
-      await updateOrder(params.id, updateData);
+      await updateOrder(orderId, updateData);
 
       toast({
         title: "Order Updated",
@@ -164,7 +168,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
 
       // Refresh the page to show updated data
       router.refresh();
-      router.push(`/orders/${params.id}`);
+      router.push(`/orders/${orderId}`);
     } catch (error) {
       console.error("Error updating order:", error);
       toast({
@@ -184,13 +188,13 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
 
       // Prepare payment data
       const paymentData = {
-        orderId: params.id,
+        orderId: orderId,
         amountPaid: data.amount,
         paymentMethod: data.paymentMethod,
       };
 
       // Update order with new payment
-      await updateOrder(params.id, paymentData);
+      await updateOrder(orderId, paymentData);
 
       toast({
         title: "Payment Recorded",
@@ -200,7 +204,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
       // Close dialog and refresh
       setPaymentDialogOpen(false);
       router.refresh();
-      router.push(`/orders/${params.id}`);
+      router.push(`/orders/${orderId}`);
     } catch (error) {
       console.error("Error recording payment:", error);
       toast({
@@ -227,7 +231,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button variant="ghost" asChild className="gap-1">
-            <Link href={`/orders/${params.id}`}>
+            <Link href={`/orders/${orderId}`}>
               <ArrowLeft className="h-4 w-4" />
               Back to Order Details
             </Link>
@@ -323,7 +327,7 @@ export default function EditOrderPage({ params }: { params: { id: string } }) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push(`/orders/${params.id}`)}
+                  onClick={() => router.push(`/orders/${orderId}`)}
                 >
                   Cancel
                 </Button>

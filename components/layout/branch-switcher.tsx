@@ -1,16 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { useBranch } from '@/components/providers/branch-provider';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ToastAction } from '@/components/ui/toast';
-import { useToast } from '@/components/ui/use-toast';
+import {usePathname} from 'next/navigation';
+import {useBranch} from '@/components/providers/branch-provider';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
+import {useToast} from '@/components/ui/use-toast';
 
 export function BranchSwitcher() {
   const { activeBranch, setActiveBranch, userBranches } = useBranch();
@@ -24,7 +17,7 @@ export function BranchSwitcher() {
   
   const handleBranchChange = (value: string) => {
     // Check if we're on the new order page and switching to "all"
-    if (value === 'all' && pathname === '/orders/new') {
+    if (value === 'all' && pathname === '/orders/new-standardized') {
       toast({
         title: "Creating order with default branch",
         description: "You have 'All Branches' selected. This order will be created under your default branch.",

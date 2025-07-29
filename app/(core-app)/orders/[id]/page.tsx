@@ -1,17 +1,17 @@
-import { Suspense } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { format } from 'date-fns';
-import { ArrowLeft, Edit } from 'lucide-react';
+import {notFound} from 'next/navigation';
+import {format} from 'date-fns';
+import {ArrowLeft} from 'lucide-react';
 
-import { getOrderById } from '../actions';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { OrderActionButtons } from "@/components/order-action-buttons";
-import { EditOrderButton } from "@/components/edit-order-button";
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import {getOrderById} from '../actions';
+import {Button} from '@/components/ui/button';
+import {Badge} from '@/components/ui/badge';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {cn} from '@/lib/utils';
+import {OrderActionButtons} from "@/components/order-action-buttons";
+import {EditOrderButton} from "@/components/edit-order-button";
+import {OrderStatusHistory} from "@/components/order-status-history";
+import {OrderStatus, PaymentStatus} from '@prisma/client';
 
 // Define types for the complete order with relations
 type OrderWithRelations = {
@@ -24,9 +24,12 @@ type OrderWithRelations = {
   totalAmount: number;
   amountPaid: number;
   amountDue: number;
+  discount: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   notes: string | null;
+  orderDate: Date | null;
+  expectedDeliveryDate: Date | null;
   customer: {
     id: string;
     name: string;
@@ -87,10 +90,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
     return notFound();
   }
 
-  // Format dates for display
-  const orderDate = new Date(order.createdAt);
-  const expectedDeliveryDate = new Date(orderDate);
-  expectedDeliveryDate.setDate(orderDate.getDate() + 2); // Assuming 2-day delivery
+
 
   // Helper function for payment status badge
   const getPaymentStatusBadge = (status: PaymentStatus) => {
@@ -151,7 +151,13 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
           <p className="text-slate-600 mt-1">{order.invoiceNumber}</p>
         </div>
         <div className="flex gap-2">
-          <EditOrderButton order={order} />
+          <EditOrderButton order={{
+            id: order.id,
+            status: order.status,
+            notes: order.notes,
+            expectedDeliveryDate: order.expectedDeliveryDate ? order.expectedDeliveryDate.toISOString().split('T')[0] : null,
+            orderDate: order.orderDate ? order.orderDate.toISOString().split('T')[0] : null
+          }} />
         </div>
       </div>
 
@@ -171,13 +177,13 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <div>
                   <h3 className="text-sm font-medium text-slate-500">Order Date</h3>
                   <p className="mt-1 text-slate-900">
-                    {format(orderDate, 'yyyy-MM-dd')}
+                    { order.orderDate ? format(order.orderDate, 'yyyy-MM-dd'): '-'}
                   </p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-slate-500">Expected Delivery</h3>
                   <p className="mt-1 text-slate-900">
-                    {format(expectedDeliveryDate, 'yyyy-MM-dd')}
+                    {order.expectedDeliveryDate ?format(order.expectedDeliveryDate, 'yyyy-MM-dd'): '-'}
                   </p>
                 </div>
                 <div>
@@ -294,8 +300,15 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Subtotal:</span>
-                  <span className="font-medium text-slate-900">₵{order.totalAmount.toFixed(2)}</span>
+                  <span className="font-medium text-slate-900">₵{(order.totalAmount + (order.discount || 0)).toFixed(2)}</span>
                 </div>
+
+                {order.discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount:</span>
+                    <span>-₵{order.discount.toFixed(2)}</span>
+                  </div>
+                )}
 
                 <div className="flex justify-between font-semibold">
                   <span className="text-slate-900">Total:</span>
@@ -345,7 +358,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               {order.payments.length > 0 ? (
                 <div className="space-y-4">
                   {order.payments.map((payment) => (
-                    <div 
+                    <div
                       key={payment.id}
                       className="border border-yellow-200 rounded-md p-4 bg-yellow-50"
                     >
@@ -366,6 +379,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               )}
             </CardContent>
           </Card>
+
+          {/* Order Status History */}
+          <OrderStatusHistory orderId={order.id} />
         </div>
       </div>
     </div>

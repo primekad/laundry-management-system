@@ -1,78 +1,47 @@
 'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { format } from "date-fns";
+import {useState} from "react";
+import {format} from "date-fns";
 import {
   ColumnDef,
+  flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
   SortingState,
-  ColumnFiltersState,
-  getFilteredRowModel,
-  flexRender,
+  useReactTable,
 } from "@tanstack/react-table";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/components/ui/table";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Card, CardContent, CardFooter} from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardFooter 
-} from "@/components/ui/card";
-import { 
-  AlertTriangle,
   CalendarIcon,
-  ChevronLeft, 
-  ChevronRight, 
-  Filter, 
-  MoreHorizontal,
-  Plus, 
-  Search,
-  Eye,
-  Edit,
-  Printer,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Filter,
+  MoreHorizontal,
+  Printer,
+  Search,
   Settings,
 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Label } from "@/components/ui/label";
-import { useBranch } from "@/components/providers/branch-provider";
-import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
-import { EditOrderButton } from "@/components/edit-order-button";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {Badge} from "@/components/ui/badge";
+import {cn} from "@/lib/utils";
+import {Calendar} from "@/components/ui/calendar";
+import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger,} from "@/components/ui/collapsible";
+import {Label} from "@/components/ui/label";
+import {useBranch} from "@/components/providers/branch-provider";
+import {useToast} from "@/components/ui/use-toast";
+import {useRouter} from "next/navigation";
+import {EditOrderButton} from "@/components/edit-order-button";
 // Import types from proper location
-import { OrderStatus, PaymentStatus } from "@/types";
+import {OrderStatus, PaymentStatus} from "@/types";
 
 // Status and payment labels mapping
 const orderStatusLabels: Record<string, string> = {
@@ -246,6 +215,7 @@ type Order = {
   amount: number;
   createdAt: Date;
   expectedDeliveryDate?: Date;
+  orderDate?: Date;
   customer?: {
     name: string;
     phone: string;
@@ -363,7 +333,7 @@ export function OrdersClient({
       accessorKey: "createdAt",
       header: "Order Date",
       enableSorting: true,
-      cell: ({ row }) => formatDate(row.original.createdAt),
+      cell: ({ row }) => formatDate(row.original.orderDate),
     },
     {
       accessorKey: "expectedDeliveryDate",
@@ -486,7 +456,7 @@ export function OrdersClient({
         duration: 5000,
       });
     }
-    router.push("/orders/new");
+    router.push("/orders/new-standardized");
   };
 
   return (

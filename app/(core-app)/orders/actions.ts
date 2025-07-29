@@ -378,14 +378,25 @@ export async function updateOrder(id: string, data: any) {
           updatedAt: new Date(),
         },
       })
-      
-      // 2. Only update order items if this is not a payment-only update
+
+      // 2. Track status changes if status is being updated
+      if (data.status && data.status !== existingOrder.status) {
+        await prisma.orderStatusHistory.create({
+          data: {
+            orderId: id,
+            previousStatus: existingOrder.status,
+            newStatus: data.status,
+          },
+        })
+      }
+
+      // 3. Only update order items if this is not a payment-only update
       if (!isPaymentOnly && data.items && Array.isArray(data.items)) {
         // Delete existing order items
         await prisma.orderItem.deleteMany({
           where: { orderId: id },
         })
-        
+
         // Create new order items
         await prisma.orderItem.createMany({
           data: data.items.map((item: any) => ({
@@ -400,8 +411,8 @@ export async function updateOrder(id: string, data: any) {
           })),
         })
       }
-      
-      // 3. Create new payment if amount is greater than 0
+
+      // 4. Create new payment if amount is greater than 0
       if (newPaymentAmount > 0 && paymentMethod) {
         await prisma.payment.create({
           data: {
@@ -482,18 +493,17 @@ export async function getOrders(params: any) {
     const where: any = {}
     
     // Filter by status
-    if (status && status !== 'ALL') {
-   
+    if (status && status.toUpperCase() !== 'ALL') {
       where.status = status
     }
-    
+
     // Filter by payment status
-    if (paymentStatus && paymentStatus !== 'ALL') {
+    if (paymentStatus && paymentStatus.toUpperCase() !== 'ALL') {
       where.paymentStatus = paymentStatus
     }
 
     // Filter by branch ID
-    if (branchId && branchId !== 'ALL') {
+    if (branchId && branchId.toUpperCase() !== 'ALL') {
       where.branchId = branchId
     }
     

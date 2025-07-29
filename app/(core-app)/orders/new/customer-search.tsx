@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { searchCustomers } from "../actions"
+import { searchCustomers } from "../actions-standardized"
 import { Check, ChevronsUpDown, UserPlus, User, Loader2 } from "lucide-react"
 
 interface CustomerSearchProps {
