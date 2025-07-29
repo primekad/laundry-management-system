@@ -28,7 +28,8 @@ jobs:
           - 5432:5432
 
     env:
-      DATABASE_URL: ${{ secrets.DIRECT_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
     steps:
       - uses: actions/checkout@v4
