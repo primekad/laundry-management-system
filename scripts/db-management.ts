@@ -20,6 +20,8 @@ const COMMANDS = {
   seed: 'npx prisma db seed',
   status: 'npx prisma migrate status',
   studio: 'npx prisma studio',
+  setup: 'npx prisma migrate deploy && npx prisma db seed',
+  ci: 'npx prisma generate && npx prisma db push',
 } as const;
 
 type Command = keyof typeof COMMANDS;
