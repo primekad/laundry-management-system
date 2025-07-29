@@ -20,12 +20,16 @@ export default async function sendEmail({ to, subject, html }: EmailRequest) {
     const finalRecipient = onlySendTo || to;
     
     // Always log the email attempt
-    const emailLogDb = getEmailLogDatabase();
-    emailLogDb.logEmail({
-        to: finalRecipient,
-        subject,
-        html
-    });
+    if(!sendActualEmail) {
+        const emailLogDb = getEmailLogDatabase();
+        emailLogDb.logEmail({
+            to: finalRecipient,
+            subject,
+            html
+        });
+        // Mark email as sent in the log
+        emailLogDb.markEmailAsSent(finalRecipient, subject);
+    }
     
     console.log(`Email ${sendActualEmail ? 'sending' : 'logging only'} to: ${finalRecipient}`);
     
@@ -49,8 +53,7 @@ export default async function sendEmail({ to, subject, html }: EmailRequest) {
             throw new Error(`Email service error: ${response.error.message}`);
         }
         
-        // Mark email as sent in the log
-        emailLogDb.markEmailAsSent(finalRecipient, subject);
+
         console.log('Email sent successfully:', response);
     } catch (error) {
         console.error('Error sending email:', error);
